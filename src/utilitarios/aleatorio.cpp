@@ -1,12 +1,6 @@
 #include "aleatorio.hpp"
 
-// [FRAMEWORK - pronto, não precisa mexer]
-
-// O gerador de números aleatórios fica "escondido" aqui dentro do arquivo
-// .cpp (variável com "static" tem escopo limitado a este arquivo). Ele é
-// inicializado uma única vez, a partir de uma semente aleatória, então o
-// programa já funciona corretamente mesmo que ninguém chame semente()
-// explicitamente.
+// O gerador inline do header e compartilhado pelas funcoes e pelo embaralhamento.
 
 
 void semente(unsigned valor)
