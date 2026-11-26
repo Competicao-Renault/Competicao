@@ -42,5 +42,10 @@ $(TEST_TARGET): tests/funcoes_basicas.cpp $(filter-out $(BUILD_DIR)/main.o,$(OBJ
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INC_DIRS) $^ -o $@ $(LDFLAGS)
 
-test: $(TEST_TARGET)
+bin/testes-sa: tests/simulated_annealing.cpp $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INC_DIRS) $^ -o $@ $(LDFLAGS)
+
+test: $(TEST_TARGET) bin/testes-sa
 	./$(TEST_TARGET)
+	./bin/testes-sa
