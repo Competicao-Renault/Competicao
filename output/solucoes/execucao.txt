@@ -1,0 +1,3 @@
+alliances: inicial=332446755.00 apos_SA=332446755.00 final=323857387.00 SA=false blocos=200 aceitos=55 construcao_s=0.39 refinamento_s=0.43 saida=output/solucoes\alliances.json
+reliability: inicial=515357081.00 apos_SA=515357081.00 final=378311541.00 SA=false blocos=200 aceitos=2 construcao_s=0.77 refinamento_s=0.50 saida=output/solucoes\reliability.json
+strikes: inicial=515357081.00 apos_SA=515357081.00 final=486800363.00 SA=false blocos=200 aceitos=0 construcao_s=0.48 refinamento_s=0.47 saida=output/solucoes\strikes.json
