@@ -14,6 +14,7 @@ struct ParametrosSA {
     double tempoLimite = 1.0;
     std::array<int, numeroMovimentosSA> pesosMovimentos{1, 2, 2, 1, 1, 1, 1, 2};
     int percentualAleatorioGrupos = 30;
+    bool permitirInviavel = false;
 };
 
 enum class MotivoEncerramentoSA { TemperaturaFinal, LimitePropostas, LimiteTempo };
@@ -25,6 +26,7 @@ struct EstatisticasSA {
     int empatesAceitos = 0;
     int piorasAceitas = 0;
     int recordes = 0;
+    int inviaveisAceitos = 0;
     int niveisConcluidos = 0;
     double custoInicial = 0.0;
     double melhorCusto = 0.0;

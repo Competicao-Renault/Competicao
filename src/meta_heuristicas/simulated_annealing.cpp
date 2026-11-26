@@ -64,6 +64,7 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
     if (estatisticas) *estatisticas = {};
     validarParametrosSA(parametros);
     Solucao atual = inicial;
+    atual.permitirInviavel = false;
     std::string motivo;
     if (!inicial.viavel || !std::isfinite(inicial.funcaoObjetivo) || !avaliarSolucao(inst, atual, &motivo)) {
         throw std::invalid_argument("SA exige solucao inicial viavel com custo valido. " + motivo);
@@ -72,6 +73,7 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
         estatisticas->custoInicial = atual.funcaoObjetivo;
     }
     Solucao melhor = atual;
+    atual.permitirInviavel = parametros.permitirInviavel;
     Solucao candidata;
     int propostas = 0;
     double temperatura = parametros.temperaturaInicial;
@@ -85,8 +87,8 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
     };
 
     while (temperatura > parametros.temperaturaFinal && podePropor()) {
-        int viaveis = 0;
-        for (; viaveis < parametros.saMax && podePropor();) {
+        int avaliadas = 0, viaveis = 0;
+        for (; avaliadas < parametros.saMax && podePropor();) {
             candidata = atual;
             ++propostas;
             std::size_t movimento = sortearMovimento(parametros);
@@ -94,12 +96,14 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
             if (!propor(inst, candidata, movimento, parametros)) {
                 continue;
             }
-            ++viaveis;
-            if (estatisticas) ++estatisticas->viaveisPorMovimento[movimento];
+            ++avaliadas;
+            viaveis += candidata.viavel;
+            if (estatisticas && candidata.viavel) ++estatisticas->viaveisPorMovimento[movimento];
             const double delta = candidata.funcaoObjetivo - atual.funcaoObjetivo;
             if (delta <= 0.0 || realAleatorio(0.0, 1.0) < std::exp(-delta / temperatura)) {
                 if (estatisticas) {
                     ++estatisticas->aceitosPorMovimento[movimento];
+                    estatisticas->inviaveisAceitos += !candidata.viavel;
                     if (delta < 0.0) {
                         ++estatisticas->melhoriasAceitas;
                     } else if (delta == 0.0) {
@@ -109,8 +113,9 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
                     }
                 }
                 std::swap(atual, candidata);
-                if (atual.funcaoObjetivo < melhor.funcaoObjetivo) {
+                if (atual.viavel && atual.funcaoObjetivo < melhor.funcaoObjetivo) {
                     melhor = atual;
+                    melhor.permitirInviavel = false;
                     if (estatisticas) {
                         ++estatisticas->recordes;
                     }
@@ -120,7 +125,7 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
 
         if (estatisticas) {
             estatisticas->candidatosViaveis += viaveis;
-            if (viaveis == parametros.saMax) {
+            if (avaliadas == parametros.saMax) {
                 ++estatisticas->niveisConcluidos;
             }
         }

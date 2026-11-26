@@ -8,6 +8,7 @@
 
 bool avaliarSolucao(const Instancia &inst, Solucao &sol, std::string *motivo) {
     sol.viavel = false;
+    sol.violacao = std::numeric_limits<double>::infinity();
     sol.funcaoObjetivo = std::numeric_limits<double>::infinity();
     sol.piorCenario = -1;
     sol.custosCenarios.assign(inst.cenarios.size(), sol.funcaoObjetivo);
@@ -41,6 +42,13 @@ bool avaliarSolucao(const Instancia &inst, Solucao &sol, std::string *motivo) {
         if (fornecidos[y.rotaOrigem] > nominal[y.rotaOrigem] || recebidos[y.rotaDestino] > nominal[y.rotaDestino]) return falha("Reutilizacao excede o volume nominal");
     }
     double objetivo = -std::numeric_limits<double>::infinity();
+    std::string primeira;
+    sol.violacao = 0;
+    auto viola = [&](double excesso, const char *texto, int id) { // Acumula excessos; guarda o primeiro motivo.
+        if (excesso <= 0) return;
+        sol.violacao += excesso;
+        if (primeira.empty()) primeira = texto + std::to_string(id);
+    };
     for (const auto &s : inst.cenarios) {
         sol.piorCenario = s.id; // Em caso de falha, informa o primeiro cenario inviavel.
         std::vector<Inteiro> portos(inst.portos.size(), 0), companhias(nm, 0), reutilizacao(nt, 0);
@@ -63,7 +71,7 @@ bool avaliarSolucao(const Instancia &inst, Solucao &sol, std::string *motivo) {
             const auto &a = sol.alocacoes[f.id];
             bool falha1 = indisponivel[a.rota1], falha2 = true;
             if (a.rota2 >= 0) falha2 = indisponivel[a.rota2];
-            if (falha1 && falha2) return falha("Fluxo sem rota disponivel no cenario " + std::to_string(s.id));
+            if (falha1 && falha2) { viola(static_cast<double>(f.demanda), "Fluxo sem rota disponivel no cenario ", s.id); continue; }
             if (falha1) adicionar(a.rota2, f.demanda);
             else if (a.rota2 >= 0 && falha2) adicionar(a.rota1, f.demanda);
             else {
@@ -78,20 +86,23 @@ bool avaliarSolucao(const Instancia &inst, Solucao &sol, std::string *motivo) {
             reutilizacao[site] += y.quantidade;
             custo -= (static_cast<double>(inst.custosRodoviarios[site][r1.portoDestino]) + inst.custosRodoviarios[site][r2.portoOrigem]) * y.quantidade;
         }
-        for (const auto &p : inst.portos) if (portos[p.id] > p.capacidade) return falha("Capacidade do porto excedida: " + std::to_string(p.id));
-        for (const auto &t : inst.sites) if (reutilizacao[t.id] > t.capacidadeReutilizacao) return falha("Capacidade de reutilizacao excedida");
+        for (const auto &p : inst.portos) viola(static_cast<double>(portos[p.id] - p.capacidade), "Capacidade do porto excedida: ", p.id);
+        for (const auto &t : inst.sites) viola(static_cast<double>(reutilizacao[t.id] - t.capacidadeReutilizacao), "Capacidade de reutilizacao excedida: ", t.id);
         for (const auto &m : inst.companhias) {
             int sites = std::count(contratos.begin() + m.id * nt, contratos.begin() + (m.id + 1) * nt, 1);
-            if (companhias[m.id] > m.capacidade || sites > m.maximoSites) return falha("Capacidade ou limite de sites da companhia excedido: " + std::to_string(m.id));
-            if (m.id != inst.companhiaSpot && companhias[m.id] > 0 && companhias[m.id] + 1e-9L < static_cast<long double>(inst.meta.alpha) * m.capacidade) return falha("Utilizacao minima da companhia nao atingida: " + std::to_string(m.id));
+            viola(static_cast<double>(companhias[m.id] - m.capacidade), "Capacidade da companhia excedida: ", m.id);
+            viola(sites - m.maximoSites, "Limite de sites da companhia excedido: ", m.id);
+            if (m.id != inst.companhiaSpot && companhias[m.id] > 0) viola(inst.meta.alpha * static_cast<double>(m.capacidade) - 1e-9 - static_cast<double>(companhias[m.id]), "Utilizacao minima da companhia nao atingida: ", m.id);
         }
+        if (sol.violacao > 0 && !sol.permitirInviavel) return falha(primeira);
         if (!std::isfinite(custo)) return falha("Custo nao finito");
         sol.custosCenarios[s.id] = custo;
         objetivo = std::max(objetivo, custo);
     }
-    sol.funcaoObjetivo = objetivo;
+    sol.funcaoObjetivo = objetivo + penalidadeViolacao * sol.violacao; // Fa: penaliza so as violacoes.
+    if (motivo) *motivo = primeira;
     sol.piorCenario = static_cast<int>(std::max_element(sol.custosCenarios.begin(), sol.custosCenarios.end()) - sol.custosCenarios.begin());
-    sol.viavel = true;
+    sol.viavel = sol.violacao == 0;
 
     return true;
 }
@@ -111,6 +122,7 @@ Solucao criarSolucaoSpot(const Instancia &inst) {
 
 void salvarSolucao(const Instancia &inst, const Solucao &solucao, const std::string &caminho) {
     Solucao sol = solucao;
+    sol.permitirInviavel = false; // A exportacao exige solucao viavel.
     std::string motivo;
     if (!avaliarSolucao(inst, sol, &motivo)) throw std::runtime_error("Exportacao de solucao inviavel: " + motivo);
     std::ofstream arquivo(std::filesystem::u8path(caminho));

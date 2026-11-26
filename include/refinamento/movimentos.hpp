@@ -4,8 +4,9 @@
 #include "definicao_problema/solucao.hpp"
 #include <utility>
 
-bool parRobusto(const Instancia &inst, int rota1, int rota2 = -1);
-// Movimentos so alteram a solucao se o resultado for viavel; custos sao atualizados.
+// exigirRobustez=false valida so os ids/fluxo das rotas (usado quando solucao.permitirInviavel).
+bool parRobusto(const Instancia &inst, int rota1, int rota2 = -1, bool exigirRobustez = true);
+// Movimentos so alteram a solucao se o resultado for viavel (ou, com solucao.permitirInviavel, valido e penalizado); custos sao atualizados.
 // Reutilizacoes existentes sao reduzidas quando necessario, sem criar novos pares.
 bool alterarAlocacoes(const Instancia &inst, Solucao &solucao, const std::vector<std::pair<int, AlocacaoFluxo>> &alteracoes, std::string *motivo = nullptr);
 bool alterarAlocacao(const Instancia &inst, Solucao &solucao, int fluxo, AlocacaoFluxo alocacao, std::string *motivo = nullptr);

@@ -19,6 +19,7 @@ struct ParametrosExecucao {
     double segundosRefinamento = 0.5;
     ParametrosRefinamento refinamento;
     int tamanhoGrupoRefinamento = 3;
+    bool dividirBB = true;
 };
 struct ResultadoExecucao {
     Solucao solucao;

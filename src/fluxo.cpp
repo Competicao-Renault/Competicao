@@ -29,6 +29,7 @@ ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao 
             SementeTemporaria escopo(p.semente);
             candidata = simulatedAnnealing(inst, sol, p.sa, &resultado.estatisticasSA);
         }
+        candidata.permitirInviavel = false;
         std::string motivo;
         if (!avaliarSolucao(inst, candidata, &motivo)) throw std::runtime_error("SA retornou solucao inviavel: " + motivo);
         if (candidata.funcaoObjetivo <= sol.funcaoObjetivo) sol = std::move(candidata);
@@ -62,7 +63,7 @@ ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao 
     };
     double segundosAntes = 0;
     int gruposAntes = 0;
-    if (p.executarTabu && p.tabu.tempoMax > 0 && p.tabu.maxIteracoes > 0 && p.tabu.maxPropostas > 0 &&
+    if (p.dividirBB && p.executarTabu && p.tabu.tempoMax > 0 && p.tabu.maxIteracoes > 0 && p.tabu.maxPropostas > 0 &&
         p.refinamento.usarBB && inst.fluxos.size() >= 2 && p.maximoGruposRefinamento >= 2) {
         segundosAntes = p.segundosRefinamento / 2;
         gruposAntes = p.maximoGruposRefinamento / 2;

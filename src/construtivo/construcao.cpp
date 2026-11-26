@@ -111,7 +111,7 @@ std::vector<AlocacaoFluxo> alternativas(const Instancia &inst, const Solucao &ba
 }
 
 std::vector<int> selecionarGrupo(const Instancia &inst, const Solucao &sol, std::mt19937 &rng, int tamanho, int percentualAleatorio) {
-    if (tamanho <= 0 || tamanho > static_cast<int>(inst.fluxos.size()) || percentualAleatorio < 0 || percentualAleatorio > 100 || !sol.viavel || sol.piorCenario < 0 || sol.piorCenario >= static_cast<int>(inst.cenarios.size()) || sol.alocacoes.size() != inst.fluxos.size()) throw std::invalid_argument("Parametros de selecao invalidos");
+    if (tamanho <= 0 || tamanho > static_cast<int>(inst.fluxos.size()) || percentualAleatorio < 0 || percentualAleatorio > 100 || (!sol.viavel && !sol.permitirInviavel) || sol.piorCenario < 0 || sol.piorCenario >= static_cast<int>(inst.cenarios.size()) || sol.alocacoes.size() != inst.fluxos.size()) throw std::invalid_argument("Parametros de selecao invalidos");
     std::vector<int> ids(inst.fluxos.size());
     std::iota(ids.begin(), ids.end(), 0);
     if (sortear(rng, 100) >= percentualAleatorio) {
@@ -131,7 +131,7 @@ std::vector<int> selecionarGrupo(const Instancia &inst, const Solucao &sol, std:
         const auto &falha = inst.indisponivel[sol.piorCenario];
         for (const auto &f : inst.fluxos) {
             const auto &a = sol.alocacoes[f.id];
-            if (falha[a.rota1]) prioridade[f.id] = static_cast<double>(inst.custosRotas[a.rota2]) * f.demanda;
+            if (falha[a.rota1] && a.rota2 >= 0) prioridade[f.id] = static_cast<double>(inst.custosRotas[a.rota2]) * f.demanda;
             else if (a.rota2 >= 0 && falha[a.rota2]) prioridade[f.id] = static_cast<double>(inst.custosRotas[a.rota1]) * f.demanda;
             else {
                 prioridade[f.id] = static_cast<double>(inst.custosRotas[a.rota1]) * a.quantidade1;

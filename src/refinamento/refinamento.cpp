@@ -13,6 +13,7 @@ void exigir(bool condicao, const char *mensagem) {
 }
 Solucao entradaValidada(const Instancia &inst, const Solucao &sol) {
     Solucao base = sol;
+    base.permitirInviavel = false;
     std::string motivo;
     if (!avaliarSolucao(inst, base, &motivo)) throw std::invalid_argument("Refinamento exige solucao viavel: " + motivo);
 

@@ -172,6 +172,15 @@ void testarNiveisEContadores() {
     verificar(estatisticas.candidatosViaveis == 1 && estatisticas.melhoriasAceitas == 0 &&
               estatisticas.empatesAceitos == 0 && estatisticas.piorasAceitas == 0 &&
               estatisticas.custoCorrente == 10, "Piora rejeitada entrou na contagem de aceites");
+
+    inst.indisponivel[0][1] = 1;
+    parametros.temperaturaInicial = 1e20;
+    parametros.permitirInviavel = true;
+    semente(123);
+    auto melhor = simulatedAnnealing(inst, inicial, parametros, &estatisticas);
+    verificar(estatisticas.inviaveisAceitos == 1 && estatisticas.candidatosViaveis == 0 &&
+              melhor.viavel && !melhor.permitirInviavel && melhor.funcaoObjetivo == 10,
+              "SA nao separou a cadeia penalizada da incumbente viavel");
 }
 }
 

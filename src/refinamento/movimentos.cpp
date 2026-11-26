@@ -14,6 +14,7 @@ bool existeFluxo(const Instancia &inst, const Solucao &sol, int fluxo) {
     return fluxo >= 0 && fluxo < static_cast<int>(inst.fluxos.size()) && sol.alocacoes.size() == inst.fluxos.size();
 }
 bool confirmar(const Instancia &inst, Solucao &sol, Solucao &candidata, std::string *motivo) {
+    candidata.permitirInviavel = sol.permitirInviavel; // Inviaveis penalizados so sao aceitos se permitido.
     if (!avaliarSolucao(inst, candidata, motivo)) return false;
     sol = std::move(candidata);
     return true;
@@ -34,11 +35,11 @@ void ajustarReutilizacoes(const Instancia &inst, Solucao &sol) {
 }
 }
 
-bool parRobusto(const Instancia &inst, int rota1, int rota2) {
+bool parRobusto(const Instancia &inst, int rota1, int rota2, bool exigirRobustez) {
     const int nr = static_cast<int>(inst.rotas.size());
     if (rota1 < 0 || rota1 >= nr || rota2 < -1 || rota2 >= nr) return false;
     if (rota2 >= 0 && (rota1 == rota2 || inst.rotas[rota1].fluxo != inst.rotas[rota2].fluxo)) return false;
-    for (const auto &s : inst.cenarios) if (inst.indisponivel[s.id][rota1] && (rota2 == -1 || inst.indisponivel[s.id][rota2])) return false;
+    if (exigirRobustez) for (const auto &s : inst.cenarios) if (inst.indisponivel[s.id][rota1] && (rota2 == -1 || inst.indisponivel[s.id][rota2])) return false;
 
     return !inst.cenarios.empty();
 }
@@ -57,7 +58,7 @@ bool alterarAlocacoes(const Instancia &inst, Solucao &sol, const std::vector<std
         if (a.quantidade1 < 0 || a.quantidade2 < 0 || Inteiro(a.quantidade1) + a.quantidade2 != inst.fluxos[f].demanda) return rejeitar(motivo, "Divisao de demanda invalida");
         if (a.quantidade1 == 0) { std::swap(a.rota1, a.rota2); std::swap(a.quantidade1, a.quantidade2); }
         if (a.quantidade2 == 0) a.rota2 = -1;
-        if (!parRobusto(inst, a.rota1, a.rota2) || inst.rotas[a.rota1].fluxo != f) return rejeitar(motivo, "Rotas invalidas ou sem cobertura robusta");
+        if (!parRobusto(inst, a.rota1, a.rota2, !sol.permitirInviavel) || inst.rotas[a.rota1].fluxo != f) return rejeitar(motivo, "Rotas invalidas ou sem cobertura robusta");
         const auto &anterior = sol.alocacoes[f];
         if (a.rota1 != anterior.rota1 || a.rota2 != anterior.rota2 || a.quantidade1 != anterior.quantidade1 || a.quantidade2 != anterior.quantidade2) mudou = true;
         candidata.alocacoes[f] = a;
