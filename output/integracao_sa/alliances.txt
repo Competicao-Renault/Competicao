@@ -1,0 +1,9 @@
+alliances: inicial=361330055.00 apos_SA=336560170.00 final=331400429.00 SA=true blocos=200 aceitos=37 construcao_s=0.29 refinamento_s=0.30 SA_s=1.00 propostas=21055 saida=output\integracao_sa\alliances.json
+  aleatorio: propostas=1886 viaveis=183 aceitos=142
+  divisao: propostas=3775 viaveis=2004 aceitos=1865
+  substituicao: propostas=3843 viaveis=480 aceitos=379
+  companhia: propostas=1879 viaveis=24 aceitos=2
+  site: propostas=1949 viaveis=43 aceitos=8
+  reutilizacao: propostas=1906 viaveis=1075 aceitos=1072
+  grupo: propostas=2019 viaveis=4 aceitos=1
+  quantidade: propostas=3798 viaveis=2005 aceitos=1966

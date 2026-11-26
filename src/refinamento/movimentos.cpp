@@ -1,6 +1,8 @@
 #include "refinamento/movimentos.hpp"
+#include "construtivo/construcao.hpp"
 #include "utilitarios/aleatorio.hpp"
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace {

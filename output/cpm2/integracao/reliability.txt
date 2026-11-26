@@ -1,0 +1,9 @@
+reliability: inicial=515357081.00 apos_SA=399934055.00 final=359273156.00 SA=true blocos=53 aceitos=0 construcao_s=0.30 refinamento_s=0.20 SA_s=0.50 propostas=7091 Tabu=true apos_tabu=380252534.00 tabu_s=0.20 tabu_propostas=1974 saida=output\cpm2\integracao\reliability.json
+  aleatorio: propostas=655 viaveis=102 aceitos=89
+  divisao: propostas=1333 viaveis=711 aceitos=646
+  substituicao: propostas=1203 viaveis=180 aceitos=161
+  companhia: propostas=635 viaveis=6 aceitos=1
+  site: propostas=680 viaveis=23 aceitos=12
+  reutilizacao: propostas=648 viaveis=391 aceitos=391
+  grupo: propostas=672 viaveis=4 aceitos=4
+  quantidade: propostas=1265 viaveis=538 aceitos=530

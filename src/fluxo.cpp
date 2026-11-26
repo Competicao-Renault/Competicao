@@ -1,25 +1,46 @@
 #include "fluxo.hpp"
 #include "refinamento/refinamento.hpp"
 #include "utilitarios/cronometro.hpp"
+#include "utilitarios/aleatorio.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
+namespace {
+struct SementeTemporaria {
+    std::mt19937 anterior = gerador;
+    explicit SementeTemporaria(unsigned valor) { semente(valor); }
+    ~SementeTemporaria() { gerador = anterior; }
+};
+}
+
 ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao &p, const EtapaSA &sa) {
     if (p.maximoGruposRefinamento < 0 || !std::isfinite(p.segundosRefinamento) || p.segundosRefinamento < 0) throw std::invalid_argument("Parametros do fluxo invalidos");
+    if (!sa && p.executarSA) validarParametrosSA(p.sa);
+    if (p.executarTabu) validarParametrosTabu(p.tabu);
     ResultadoExecucao resultado;
     auto &sol = resultado.solucao;
     sol = construirSolucao(inst, p.construcao, p.semente, &resultado.construcao);
     resultado.custoConstrucao = sol.funcaoObjetivo;
-    if (sa) {
+    if (sa || p.executarSA) {
         Solucao candidata = sol;
-        sa(inst, candidata, p.semente);
+        if (sa) sa(inst, candidata, p.semente);
+        else {
+            SementeTemporaria escopo(p.semente);
+            candidata = simulatedAnnealing(inst, sol, p.sa, &resultado.estatisticasSA);
+        }
         std::string motivo;
         if (!avaliarSolucao(inst, candidata, &motivo)) throw std::runtime_error("SA retornou solucao inviavel: " + motivo);
         if (candidata.funcaoObjetivo <= sol.funcaoObjetivo) sol = std::move(candidata);
         resultado.saExecutado = true;
     }
     resultado.custoAposSA = sol.funcaoObjetivo;
+    if (p.executarTabu) {
+        SementeTemporaria escopo(p.semente);
+        buscaTabu(inst, sol, p.tabu, &resultado.estatisticasTabu);
+        resultado.tabuExecutado = true;
+    }
+    resultado.custoAposTabu = sol.funcaoObjetivo;
     Cronometro tempo;
     for (const auto &f : inst.fluxos) {
         if (tempo.segundosDecorridos() >= p.segundosRefinamento) break;

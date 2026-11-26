@@ -1,0 +1,9 @@
+strikes: inicial=515357081.00 apos_SA=464532228.00 final=462182335.00 SA=true blocos=136 aceitos=0 construcao_s=0.50 refinamento_s=0.30 SA_s=1.00 propostas=25013 saida=output\integracao_sa\strikes.json
+  aleatorio: propostas=2260 viaveis=5 aceitos=1
+  divisao: propostas=4503 viaveis=417 aceitos=319
+  substituicao: propostas=4442 viaveis=21 aceitos=12
+  companhia: propostas=2282 viaveis=0 aceitos=0
+  site: propostas=2250 viaveis=20 aceitos=7
+  reutilizacao: propostas=2349 viaveis=792 aceitos=791
+  grupo: propostas=2261 viaveis=0 aceitos=0
+  quantidade: propostas=4666 viaveis=367 aceitos=345

@@ -2,8 +2,9 @@
 
 `construcao.hpp` define a construtiva; `fluxo.hpp` coordena as etapas. A
 representacao `Solucao`, o avaliador e os movimentos existentes foram preservados.
-Nenhum algoritmo SA foi implementado e nenhum arquivo de meta-heuristicas foi
-modificado. Os novos `.cpp` entram automaticamente na compilacao do Makefile.
+O SA de `_com1.0.zip` foi integrado em `meta_heuristicas/simulated_annealing`.
+Os `.cpp` entram automaticamente na compilacao do Makefile. Detalhes dos
+movimentos e opcoes estao em [integracao do SA](integracao_sa.md).
 
 ## Construtiva
 
@@ -45,18 +46,19 @@ Orcamento zero retorna SPOT. Parametros invalidos lancam `invalid_argument`.
 ## Ponto de integracao do SA
 
 ```text
-lerInstancia -> construirSolucao -> callback SA opcional
+lerInstancia -> construirSolucao -> SA integrado ou callback -> tabu opcional
             -> refinarQuantidades/grupos -> avaliarSolucao -> salvarSolucao
 ```
 
-`executarFluxo(inst, parametros)` ja funciona sem SA e retorna
-`saExecutado = false`. O callback tem o contrato:
+`executarFluxo(inst, parametros)` executa o SA integrado por padrao. Para pular
+essa etapa, use `parametros.executarSA = false`. Um callback explicito tem
+prioridade sobre essa opcao e sobre o SA integrado. Seu contrato permanece:
 
 ```cpp
 using EtapaSA = std::function<void(const Instancia &, Solucao &, unsigned)>;
 ```
 
-Quando o SA estiver pronto, adapte sua chamada no `main`:
+Para substituir o SA integrado por uma implementacao alternativa:
 
 ```cpp
 EtapaSA etapa = [&](const Instancia &i, Solucao &s, unsigned seed) {
@@ -72,6 +74,9 @@ rejeita resultados inviaveis com erro e preserva a incumbente se o custo piorar.
 O callback deve guardar internamente a melhor solucao do SA, nao apenas o ultimo
 estado da cadeia. Seu tempo deve ser controlado pelos parametros proprios do SA.
 
+Se `parametros.executarTabu` for true, executa `buscaTabu` depois do SA, com
+parametros em `parametros.tabu` e RNG isolado pela mesma semente. Retorna seus
+contadores e o custo dessa etapa em `estatisticasTabu` e `custoAposTabu`.
 Depois ha uma passagem de quantidades e grupos de ate tres fluxos, usando
 a mesma selecao dirigida com parcela aleatoria. Padroes: 0,5 segundo e ate
 100 grupos. O refinamento so aceita melhorias estritas. Os limites de tempo
@@ -90,8 +95,8 @@ O programa agora construi e refina antes de exportar. Sem `--saida`, grava em
 ./bin/competicao.exe instancia/alliances.json instancia/reliability.json instancia/strikes.json
 ```
 
-Os custos de construcao e finais sao distintos no console. `SA=false` informa
-que a etapa ainda nao foi conectada. Os JSONs continuam no formato oficial
+Os custos de construcao, apos SA e finais sao distintos no console. `SA=false`
+informa que a etapa foi desativada. Os JSONs continuam no formato oficial
 `{x, y}`, sem campos de diagnostico. Leitura, validacao final e exportacao estao
 fora dos orcamentos de busca; a construtiva inclui a criacao da sua SPOT inicial.
 
