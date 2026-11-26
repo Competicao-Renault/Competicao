@@ -1,0 +1,9 @@
+reliability: inicial=458653377.00 apos_SA=363186941.00 final=348364209.00 SA=true blocos=107 aceitos=7 construcao_s=0.50 refinamento_s=0.30 SA_s=1.00 propostas=13042 saida=output\integracao_sa\reliability.json
+  aleatorio: propostas=1246 viaveis=195 aceitos=171
+  divisao: propostas=2379 viaveis=1404 aceitos=1277
+  substituicao: propostas=2328 viaveis=442 aceitos=362
+  companhia: propostas=1158 viaveis=33 aceitos=8
+  site: propostas=1202 viaveis=29 aceitos=18
+  reutilizacao: propostas=1217 viaveis=757 aceitos=757
+  grupo: propostas=1230 viaveis=6 aceitos=3
+  quantidade: propostas=2282 viaveis=1166 aceitos=1137

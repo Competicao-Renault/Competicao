@@ -1,0 +1,4 @@
+instancia,semente,custo_construcao,custo_apos_SA,custo_final,pior_cenario,propostas_SA,sa_executado
+alliances,7,361330055.0,336560170.0,331400429,2,21055,True
+reliability,7,458653377.0,363186941.0,348364209,15,13042,True
+strikes,7,515357081.0,464532228.0,462182335,29,25013,True

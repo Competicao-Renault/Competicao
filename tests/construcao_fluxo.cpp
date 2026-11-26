@@ -67,7 +67,7 @@ void testarConstrucao() {
 }
 void testarFluxo() {
     const auto inst = exemplo();
-    ParametrosExecucao p; p.construcao.limiteSegundos = 0; p.segundosRefinamento = 0; p.semente = 9;
+    ParametrosExecucao p; p.executarSA = false; p.construcao.limiteSegundos = 0; p.segundosRefinamento = 0; p.semente = 9;
     auto semSA = executarFluxo(inst, p);
     verificar(!semSA.saExecutado && semSA.solucao.viavel && semSA.solucao.funcaoObjetivo == 2000, "Fluxo sem SA incorreto");
     auto melhor = criarSolucaoSpot(inst);
@@ -96,7 +96,7 @@ int main() {
         testarConstrucao(); testarFluxo();
         for (const std::string nome : {"alliances", "reliability", "strikes"}) {
             const auto inst = lerInstancia("instancia/" + nome + ".json");
-            ParametrosExecucao p; p.construcao.limiteSegundos = 0.15; p.segundosRefinamento = 0.1;
+            ParametrosExecucao p; p.executarSA = false; p.construcao.limiteSegundos = 0.15; p.segundosRefinamento = 0.1;
             auto r = executarFluxo(inst, p);
             auto copia = r.solucao;
             verificar(avaliarSolucao(inst, copia) && copia.funcaoObjetivo == r.solucao.funcaoObjetivo, "Fluxo oficial retornou cache incorreto");

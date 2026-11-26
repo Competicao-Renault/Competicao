@@ -22,7 +22,7 @@ with tempfile.TemporaryDirectory(dir='bin') as pasta:
     saida = Path(pasta) / 'saida-\u00e7.json'
     instancia = json.loads(Path('instancia/alliances.json').read_text(encoding='utf-8'))
     entrada.write_text(json.dumps(instancia, ensure_ascii=False), encoding='utf-8')
-    resultado = subprocess.run([exe, '--saida', str(saida), '--semente', '42',
+    resultado = subprocess.run([exe, '--sem-sa', '--saida', str(saida), '--semente', '42',
                                '--construcao-segundos', '0', '--refinamento-segundos', '0',
                                str(entrada)], capture_output=True)
     assert resultado.returncode == 0, resultado.stderr.decode('utf-8', errors='replace')
@@ -30,4 +30,13 @@ with tempfile.TemporaryDirectory(dir='bin') as pasta:
     assert b'SA=false' in resultado.stdout
     invalido = subprocess.run([exe, '--saida', str(saida), str(entrada), str(entrada)], capture_output=True)
     assert invalido.returncode != 0
-print('12 verificacoes de CLI passaram, incluindo caminhos absolutos com acentos.')
+    for pesos in ['0,0,0,0,0,0,0,0', '-1,1,1,1,1,1,1,1', '1,2', '1,1,1,1,1,1,1,1,']:
+        invalido = subprocess.run([exe, '--sa-pesos', pesos, '--construcao-segundos', '0', str(entrada)], capture_output=True)
+        assert invalido.returncode != 0
+    integrado = subprocess.run([exe, '--saida', str(saida), '--semente', '42', '--construcao-segundos', '0',
+                               '--sa-segundos', '0.1', '--sa-max-propostas', '100',
+                               '--refinamento-segundos', '0.05', str(entrada)], capture_output=True)
+    assert integrado.returncode == 0, integrado.stderr.decode('utf-8', errors='replace')
+    assert b'SA=true' in integrado.stdout and b'grupo: propostas=' in integrado.stdout
+    assert conferir(instancia, json.loads(saida.read_text()))[0] <= 515357081
+print('17 verificacoes de CLI passaram, incluindo SA com refinamento e caminhos com acentos.')

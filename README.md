@@ -34,9 +34,10 @@ Em ambiente com GNU Make e ferramentas Unix, use `make` e execute
 `./bin/competicao instancia/alliances.json`. O executavel cria uma solucao por
 blocos, executa o refinamento final e exporta o JSON oficial `{x, y}` em
 `output/solucoes/`. `--saida` permite escolher o arquivo para uma unica instancia.
-A etapa SA e opcional e ainda nao esta conectada. Consulte
-[construcao e fluxo](docs/construcao_fluxo.md) para integrar o callback e ajustar
-sementes e orcamentos de tempo.
+O SA do ZIP foi integrado e e executado por padrao entre a construcao e o
+refinamento. Use `--sem-sa` para desativa-lo. Consulte
+[integracao do SA](docs/integracao_sa.md) para ajustar movimentos, sementes e
+orcamentos, ou [construcao e fluxo](docs/construcao_fluxo.md) para usar um callback.
 
 ## Solucoes e movimentos
 
