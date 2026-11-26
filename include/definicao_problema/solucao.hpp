@@ -16,9 +16,13 @@ struct Solucao {
     double funcaoObjetivo = std::numeric_limits<double>::infinity();
     int piorCenario = -1;
     bool viavel = false;
+    double violacao = std::numeric_limits<double>::infinity(); // Soma dos excessos; viavel <=> violacao == 0.
+    bool permitirInviavel = false; // true: avaliarSolucao aceita violacoes, penalizadas em funcaoObjetivo (Fa).
 };
+inline double penalidadeViolacao = 1e6; // Custo por unidade de excesso (TEU, sites ou TEU de fluxo sem rota).
 
-// Recalcula todos os caches. Inviabilidade resulta em objetivo infinito e motivo opcional.
+// Recalcula caches. Sem permitirInviavel, inviabilidade retorna false (objetivo infinito). Com ele, retorna true
+// se a estrutura e valida e funcaoObjetivo = max custo + penalidadeViolacao * violacao; use .viavel para saber se e viavel.
 bool avaliarSolucao(const Instancia &inst, Solucao &solucao, std::string *motivo = nullptr);
 Solucao criarSolucaoSpot(const Instancia &inst);
 // Exporta somente solucoes viaveis, no formato oficial {x, y}, sem os caches.

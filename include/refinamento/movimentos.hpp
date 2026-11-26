@@ -4,8 +4,9 @@
 #include "definicao_problema/solucao.hpp"
 #include <utility>
 
-bool parRobusto(const Instancia &inst, int rota1, int rota2 = -1);
-// Movimentos so alteram a solucao se o resultado for viavel; custos sao atualizados.
+// exigirRobustez=false valida so os ids/fluxo das rotas (usado quando solucao.permitirInviavel).
+bool parRobusto(const Instancia &inst, int rota1, int rota2 = -1, bool exigirRobustez = true);
+// Movimentos so alteram a solucao se o resultado for viavel (ou, com solucao.permitirInviavel, valido e penalizado); custos sao atualizados.
 // Reutilizacoes existentes sao reduzidas quando necessario, sem criar novos pares.
 bool alterarAlocacoes(const Instancia &inst, Solucao &solucao, const std::vector<std::pair<int, AlocacaoFluxo>> &alteracoes, std::string *motivo = nullptr);
 bool alterarAlocacao(const Instancia &inst, Solucao &solucao, int fluxo, AlocacaoFluxo alocacao, std::string *motivo = nullptr);
@@ -29,7 +30,6 @@ bool movimentoDivisao(const Instancia &inst, Solucao &solucao, int tentativas = 
 bool movimentoSubstituicao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoCompanhia(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoSite(const Instancia &inst, Solucao &solucao, int tentativas = 30);
-<<<<<<< HEAD
 bool movimentoQuantidade(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoReutilizacao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoGrupo(const Instancia &inst, Solucao &solucao, int tentativas = 30, int percentualAleatorio = 30);
@@ -38,7 +38,5 @@ bool compensarFluxos(const Instancia &inst, Solucao &solucao, int fluxo1, int fl
 bool movimentoCompensado(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool fecharContrato(const Instancia &inst, Solucao &solucao, int companhia, int site, int destino, std::string *motivo = nullptr);
 bool movimentoContrato(const Instancia &inst, Solucao &solucao, int tentativas = 30);
-=======
->>>>>>> 9ae27bf60f46b7eb264913aaca7cbf8aa5fc414c
 
 #endif
