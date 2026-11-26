@@ -26,6 +26,7 @@ struct ResultadoExecucao {
     EstatisticasSA estatisticasSA;
     EstatisticasTabu estatisticasTabu;
     double custoAposTabu = 0;
+    double custoAntesTabu = 0;
     bool tabuExecutado = false;
     double custoConstrucao = 0, custoAposSA = 0, segundosRefinamento = 0;
     int melhoriasRefinamento = 0;
@@ -33,7 +34,7 @@ struct ResultadoExecucao {
     bool saExecutado = false;
 };
 
-// Construir -> SA integrado (ou callback) -> tabu opcional -> refinar -> validar.
+// Com Tabu ativa, divide o refinamento B&B antes e depois dela.
 // Sem callback usa ParametrosExecucao::executarSA; callback explicito tem prioridade.
 // O callback recebe uma copia; resultados inviaveis lancam erro e pioras nao
 // substituem a melhor solucao. Capturas permitem adaptar os parametros do SA.

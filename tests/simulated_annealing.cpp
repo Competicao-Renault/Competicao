@@ -86,6 +86,7 @@ void testarBusca(const Instancia &inst, const Solucao &inicial, const Parametros
 }
 
 void testarLimites(Instancia inst, const Solucao &inicial, ParametrosSA parametros) {
+    parametros.pesosMovimentos = {1, 0, 0, 0, 0, 0, 0, 0};
     for (auto &fluxo : inst.fluxos) {
         fluxo.rotas = {inicial.alocacoes[fluxo.id].rota1};
     }
@@ -130,6 +131,7 @@ void testarNiveisEContadores() {
     verificar(avaliarSolucao(inst, inicial), "Exemplo termico inviavel");
 
     ParametrosSA parametros{2, 1, 0.5, 1, 100, 60};
+    parametros.pesosMovimentos = {1, 0, 0, 0, 0, 0, 0, 0};
     EstatisticasSA estatisticas;
     semente(123);
     simulatedAnnealing(inst, inicial, parametros, &estatisticas);

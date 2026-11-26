@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
                       << " blocos=" << resultado.construcao.blocos << " aceitos=" << resultado.construcao.blocosAceitos
                       << " construcao_s=" << resultado.construcao.segundos << " refinamento_s=" << resultado.segundosRefinamento
                       << " SA_s=" << resultado.estatisticasSA.tempoExecucao << " propostas=" << resultado.estatisticasSA.propostas
-                      << " Tabu=" << resultado.tabuExecutado << " apos_tabu=" << resultado.custoAposTabu
+                      << " Tabu=" << resultado.tabuExecutado << " antes_tabu=" << resultado.custoAntesTabu << " apos_tabu=" << resultado.custoAposTabu
                       << " tabu_s=" << resultado.estatisticasTabu.tempoExecucao << " tabu_propostas=" << resultado.estatisticasTabu.propostas
                       << " BB_nos=" << resultado.nosBB << " BB_podas=" << resultado.podasBB
                       << " saida=" << destino.u8string() << '\n';

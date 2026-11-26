@@ -29,7 +29,6 @@ bool movimentoDivisao(const Instancia &inst, Solucao &solucao, int tentativas = 
 bool movimentoSubstituicao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoCompanhia(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoSite(const Instancia &inst, Solucao &solucao, int tentativas = 30);
-<<<<<<< HEAD
 bool movimentoQuantidade(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoReutilizacao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoGrupo(const Instancia &inst, Solucao &solucao, int tentativas = 30, int percentualAleatorio = 30);
@@ -38,7 +37,5 @@ bool compensarFluxos(const Instancia &inst, Solucao &solucao, int fluxo1, int fl
 bool movimentoCompensado(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool fecharContrato(const Instancia &inst, Solucao &solucao, int companhia, int site, int destino, std::string *motivo = nullptr);
 bool movimentoContrato(const Instancia &inst, Solucao &solucao, int tentativas = 30);
-=======
->>>>>>> 9ae27bf60f46b7eb264913aaca7cbf8aa5fc414c
 
 #endif

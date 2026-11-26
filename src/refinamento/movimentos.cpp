@@ -255,7 +255,6 @@ bool movimentoSite(const Instancia &inst, Solucao &sol, int tentativas) {
 
     return false;
 }
-<<<<<<< HEAD
 
 bool movimentoQuantidade(const Instancia &inst, Solucao &sol, int tentativas) {
     if (!prontoParaSortear(inst, sol)) return false;
@@ -369,5 +368,3 @@ bool movimentoContrato(const Instancia &inst, Solucao &sol, int tentativas) {
     }
     return false;
 }
-=======
->>>>>>> 9ae27bf60f46b7eb264913aaca7cbf8aa5fc414c

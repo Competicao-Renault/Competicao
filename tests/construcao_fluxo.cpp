@@ -89,6 +89,14 @@ void testarFluxo() {
     auto refinado = executarFluxo(inst, p);
     verificar(!refinado.saExecutado && refinado.solucao.funcaoObjetivo < refinado.custoConstrucao, "Refinamento final nao executou");
     verificar(refinado.nosBB > 0 && refinado.podasBB > 0, "Fluxo oficial nao executou B&B com podas");
+    p.executarTabu = true; p.tabu.maxPropostas = 20;
+    auto dividido = executarFluxo(inst, p);
+    verificar(dividido.custoAntesTabu < dividido.custoAposSA &&
+              dividido.estatisticasTabu.custoInicial == dividido.custoAntesTabu &&
+              dividido.solucao.funcaoObjetivo <= dividido.custoAposTabu, "Refinamento antes e depois da Tabu inconsistente");
+    p.refinamento.usarBB = false;
+    auto enumerado = executarFluxo(inst, p);
+    verificar(enumerado.custoAntesTabu == enumerado.custoAposSA && enumerado.nosBB == 0, "Enumeracao foi dividida");
 }
 }
 
