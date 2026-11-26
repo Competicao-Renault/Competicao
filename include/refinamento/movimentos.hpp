@@ -20,8 +20,7 @@ bool movimentoAleatorio(const Instancia &inst, Solucao &solucao, int tentativas 
 bool redividirFluxo(const Instancia &inst, Solucao &solucao, int fluxo, int rotaA, int rotaB, int quantidadeA, std::string *motivo = nullptr);
 // Troca a rota 1 e/ou a rota 2 de um fluxo (-1 mantem a atual), preservando as quantidades.
 bool substituirPar(const Instancia &inst, Solucao &solucao, int fluxo, int novaRota1, int novaRota2 = -1, std::string *motivo = nullptr);
-// Migra os fluxos listados de "de" (-1 = qualquer) para "para" com cobertura
-// robusta. Rejeita tudo se faltar oferta necessaria; pode consolidar duas rotas.
+// Move os fluxos listados da companhia "de" (-1 = qualquer) para "para", usando a rota mais barata de "para".
 bool migrarFluxos(const Instancia &inst, Solucao &solucao, const std::vector<int> &fluxos, int de, int para, std::string *motivo = nullptr);
 bool trocarCompanhia(const Instancia &inst, Solucao &solucao, int de, int para, std::string *motivo = nullptr); // Todos os fluxos de "de".
 bool unificarSite(const Instancia &inst, Solucao &solucao, int site, int companhia, std::string *motivo = nullptr); // Todos os fluxos do site.
@@ -30,6 +29,7 @@ bool movimentoDivisao(const Instancia &inst, Solucao &solucao, int tentativas = 
 bool movimentoSubstituicao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoCompanhia(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoSite(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+<<<<<<< HEAD
 bool movimentoQuantidade(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoReutilizacao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoGrupo(const Instancia &inst, Solucao &solucao, int tentativas = 30, int percentualAleatorio = 30);
@@ -38,5 +38,7 @@ bool compensarFluxos(const Instancia &inst, Solucao &solucao, int fluxo1, int fl
 bool movimentoCompensado(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool fecharContrato(const Instancia &inst, Solucao &solucao, int companhia, int site, int destino, std::string *motivo = nullptr);
 bool movimentoContrato(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+=======
+>>>>>>> 9ae27bf60f46b7eb264913aaca7cbf8aa5fc414c
 
 #endif
