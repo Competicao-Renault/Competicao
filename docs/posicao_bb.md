@@ -65,11 +65,13 @@ foi melhor em media no de dois segundos. A preferencia nao e universal.
 ## Recomendacao
 
 Manter B&B depois da Tabu como ordem simples de polimento: foi mais consistente
-na maioria das comparacoes pareadas. Essa ja e a ordem do fluxo de producao,
-que permanece sem mudanca. Com dois segundos disponiveis para essas etapas,
+na maioria das comparacoes pareadas. Com dois segundos disponiveis para essas etapas,
 experimentar 25% B&B antes, 50% Tabu e 25% B&B depois mostrou a melhor media.
 Isso nao implica que a mesma divisao seja ideal para varios minutos ou para
 solucoes iniciais melhores; recomenda-se comparar novamente nesses cenarios.
+
+O fluxo de producao agora divide o refinamento igualmente antes e depois
+da Tabu quando ambas as etapas estao ativas. Consulte [os parametros](branch_and_bound.md).
 
 Todos os 120 JSONs finais foram conferidos pelo verificador Python independente,
 incluindo custos, capacidades, contratos, minimos, reutilizacao e todos os

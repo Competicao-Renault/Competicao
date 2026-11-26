@@ -73,7 +73,7 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
         estatisticas->custoInicial = atual.funcaoObjetivo;
     }
     Solucao melhor = atual;
-    atual.permitirInviavel = true;
+    atual.permitirInviavel = parametros.permitirInviavel;
     Solucao candidata;
     int propostas = 0;
     double temperatura = parametros.temperaturaInicial;
@@ -125,6 +125,7 @@ Solucao simulatedAnnealing(const Instancia &inst, const Solucao &inicial, const 
 
             if (estatisticas) {
                 ++estatisticas->aceitosPorMovimento[movimento];
+                estatisticas->inviaveisAceitos += !candidata.viavel;
                 if (delta < 0.0) {
                     ++estatisticas->melhoriasAceitas;
                 } else if (delta == 0.0) {
