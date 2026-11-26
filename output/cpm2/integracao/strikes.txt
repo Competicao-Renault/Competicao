@@ -1,0 +1,9 @@
+strikes: inicial=515357081.00 apos_SA=473945210.00 final=469940221.00 SA=true blocos=70 aceitos=0 construcao_s=0.30 refinamento_s=0.20 SA_s=0.50 propostas=12188 Tabu=true apos_tabu=472110677.00 tabu_s=0.20 tabu_propostas=4161 saida=output\cpm2\integracao\strikes.json
+  aleatorio: propostas=1119 viaveis=3 aceitos=0
+  divisao: propostas=2218 viaveis=162 aceitos=118
+  substituicao: propostas=2154 viaveis=7 aceitos=5
+  companhia: propostas=1133 viaveis=0 aceitos=0
+  site: propostas=1112 viaveis=6 aceitos=2
+  reutilizacao: propostas=1132 viaveis=462 aceitos=461
+  grupo: propostas=1113 viaveis=0 aceitos=0
+  quantidade: propostas=2207 viaveis=122 aceitos=116

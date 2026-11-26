@@ -1,0 +1,9 @@
+alliances: inicial=361609214.00 apos_SA=335694815.00 final=333215705.00 SA=true blocos=135 aceitos=34 construcao_s=0.30 refinamento_s=0.20 SA_s=0.50 propostas=13030 Tabu=true apos_tabu=334781646.00 tabu_s=0.20 tabu_propostas=3613 saida=output\cpm2\integracao\alliances.json
+  aleatorio: propostas=1162 viaveis=114 aceitos=91
+  divisao: propostas=2418 viaveis=1292 aceitos=1234
+  substituicao: propostas=2300 viaveis=250 aceitos=201
+  companhia: propostas=1182 viaveis=15 aceitos=3
+  site: propostas=1181 viaveis=26 aceitos=9
+  reutilizacao: propostas=1164 viaveis=687 aceitos=684
+  grupo: propostas=1211 viaveis=4 aceitos=0
+  quantidade: propostas=2412 viaveis=1224 aceitos=1211

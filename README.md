@@ -38,6 +38,8 @@ O SA do ZIP foi integrado e e executado por padrao entre a construcao e o
 refinamento. Use `--sem-sa` para desativa-lo. Consulte
 [integracao do SA](docs/integracao_sa.md) para ajustar movimentos, sementes e
 orcamentos, ou [construcao e fluxo](docs/construcao_fluxo.md) para usar um callback.
+A busca tabu do `cpm2.zip` pode ser ativada com `--tabu --tabu-segundos 1`,
+entre SA e refinamento. Fica desativada por padrao. Veja [integracao cpm2](docs/integracao_cpm2.md).
 
 ## Solucoes e movimentos
 

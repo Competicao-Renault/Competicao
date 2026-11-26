@@ -17,6 +17,7 @@ struct SementeTemporaria {
 ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao &p, const EtapaSA &sa) {
     if (p.maximoGruposRefinamento < 0 || !std::isfinite(p.segundosRefinamento) || p.segundosRefinamento < 0) throw std::invalid_argument("Parametros do fluxo invalidos");
     if (!sa && p.executarSA) validarParametrosSA(p.sa);
+    if (p.executarTabu) validarParametrosTabu(p.tabu);
     ResultadoExecucao resultado;
     auto &sol = resultado.solucao;
     sol = construirSolucao(inst, p.construcao, p.semente, &resultado.construcao);
@@ -34,6 +35,12 @@ ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao 
         resultado.saExecutado = true;
     }
     resultado.custoAposSA = sol.funcaoObjetivo;
+    if (p.executarTabu) {
+        SementeTemporaria escopo(p.semente);
+        buscaTabu(inst, sol, p.tabu, &resultado.estatisticasTabu);
+        resultado.tabuExecutado = true;
+    }
+    resultado.custoAposTabu = sol.funcaoObjetivo;
     Cronometro tempo;
     for (const auto &f : inst.fluxos) {
         if (tempo.segundosDecorridos() >= p.segundosRefinamento) break;

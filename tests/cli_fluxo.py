@@ -28,15 +28,21 @@ with tempfile.TemporaryDirectory(dir='bin') as pasta:
     assert resultado.returncode == 0, resultado.stderr.decode('utf-8', errors='replace')
     assert conferir(instancia, json.loads(saida.read_text()))[0] == 515357081
     assert b'SA=false' in resultado.stdout
+    assert b'Tabu=false' in resultado.stdout
     invalido = subprocess.run([exe, '--saida', str(saida), str(entrada), str(entrada)], capture_output=True)
     assert invalido.returncode != 0
     for pesos in ['0,0,0,0,0,0,0,0', '-1,1,1,1,1,1,1,1', '1,2', '1,1,1,1,1,1,1,1,']:
         invalido = subprocess.run([exe, '--sa-pesos', pesos, '--construcao-segundos', '0', str(entrada)], capture_output=True)
         assert invalido.returncode != 0
+    for arg, valor in [('--tabu-lista', '0'), ('--tabu-segundos', 'nan'), ('--tabu-max-propostas', '-1')]:
+        invalido = subprocess.run([exe, '--sem-sa', arg, valor, '--construcao-segundos', '0', str(entrada)], capture_output=True)
+        assert invalido.returncode != 0
     integrado = subprocess.run([exe, '--saida', str(saida), '--semente', '42', '--construcao-segundos', '0',
                                '--sa-segundos', '0.1', '--sa-max-propostas', '100',
+                               '--tabu-segundos', '0.05',
                                '--refinamento-segundos', '0.05', str(entrada)], capture_output=True)
     assert integrado.returncode == 0, integrado.stderr.decode('utf-8', errors='replace')
     assert b'SA=true' in integrado.stdout and b'grupo: propostas=' in integrado.stdout
+    assert b'Tabu=true' in integrado.stdout
     assert conferir(instancia, json.loads(saida.read_text()))[0] <= 515357081
-print('17 verificacoes de CLI passaram, incluindo SA com refinamento e caminhos com acentos.')
+print('20 verificacoes de CLI passaram, incluindo SA, tabu, refinamento e caminhos com acentos.')

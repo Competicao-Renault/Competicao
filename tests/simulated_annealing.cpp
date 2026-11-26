@@ -173,6 +173,11 @@ void testarNiveisEContadores() {
     verificar(estatisticas.candidatosViaveis == 1 && estatisticas.melhoriasAceitas == 0 &&
               estatisticas.empatesAceitos == 0 && estatisticas.piorasAceitas == 0 &&
               estatisticas.custoCorrente == 10, "Piora rejeitada entrou na contagem de aceites");
+    inst.custosRotas[1] = 10;
+    ParametrosTabu tabu; tabu.tamanhoLista = 3; tabu.tamanhoVizinhanca = 50; tabu.maxIteracoes = 4; tabu.maxPropostas = 200; tabu.tempoMax = 60;
+    auto cadeia = inicial; EstatisticasTabu e;
+    semente(123); buscaTabu(inst, cadeia, tabu, &e);
+    verificar(e.bloqueados > 0 && mesmaSolucao(cadeia, inicial), "Memoria tabu nao bloqueou revisitas de mesmo custo");
 }
 
 void testarMovimentosIntegrados() {
@@ -222,11 +227,45 @@ void testarMovimentosIntegrados() {
     semente(321); auto r1 = simulatedAnnealing(i, sol, p, &e1); auto estado = gerador;
     semente(321); auto r2 = simulatedAnnealing(i, sol, p, &e2);
     verificar(mesmaSolucao(r1, r2) && gerador == estado && e1.propostasPorMovimento == e2.propostasPorMovimento, "Mistura de movimentos nao reproduziu a semente");
+    auto permutada = sol;
+    for (auto &a : permutada.alocacoes) { std::swap(a.rota1, a.rota2); std::swap(a.quantidade1, a.quantidade2); }
+    std::reverse(permutada.reutilizacoes.begin(), permutada.reutilizacoes.end());
+    permutada.funcaoObjetivo = -1;
+    verificar(hashTabu(sol) == hashTabu(permutada), "Hash tabu depende de slots, ordem ou caches");
+    ParametrosTabu tabu; tabu.maxIteracoes = 30; tabu.maxPropostas = 200; tabu.tamanhoVizinhanca = 10; tabu.tamanhoLista = 3; tabu.tempoMax = 60;
+    auto t1 = sol, t2 = sol;
+    EstatisticasTabu et1, et2;
+    semente(456); double custoTabu = buscaTabu(i, t1, tabu, &et1); estado = gerador;
+    semente(456); buscaTabu(i, t2, tabu, &et2);
+    verificar(mesmaSolucao(t1, t2) && gerador == estado && et1.propostas == et2.propostas, "Tabu nao reproduziu semente e limites");
+    verificar(t1.viavel && custoTabu <= sol.funcaoObjetivo && custoTabu <= et1.custoCorrente && et1.propostas <= 200 && et1.viaveis <= et1.propostas && et1.aceitos <= et1.iteracoes, "Incumbente ou contadores tabu invalidos");
+    auto conferida = t1;
+    verificar(avaliarSolucao(i, conferida) && mesmaSolucao(t1, conferida), "Tabu retornou caches incorretos");
+    auto zero = sol; tabu.tempoMax = 0;
+    buscaTabu(i, zero, tabu, &et1);
+    verificar(mesmaSolucao(zero, sol) && et1.propostas == 0, "Tabu com tempo zero alterou a entrada");
+    verificar(busca_tabu(i, zero, 3, 10, 0) == sol.funcaoObjetivo, "Interface original da tabu incompativel");
+    auto inviavel = sol; inviavel.viavel = false; bool rejeitouEntrada = false;
+    try { buscaTabu(i, inviavel, tabu); } catch (const std::invalid_argument &) { rejeitouEntrada = true; }
+    verificar(rejeitouEntrada && !inviavel.viavel, "Tabu aceitou entrada inviavel");
+    for (int caso = 0; caso < 4; ++caso) {
+        auto invalida = tabu;
+        if (caso == 0) invalida.tamanhoLista = 0;
+        if (caso == 1) invalida.tamanhoVizinhanca = 0;
+        if (caso == 2) invalida.tempoMax = std::numeric_limits<double>::quiet_NaN();
+        if (caso == 3) invalida.maxPropostas = -1;
+        bool rejeitou = false;
+        try { buscaTabu(i, zero, invalida); } catch (const std::invalid_argument &) { rejeitou = true; }
+        verificar(rejeitou && mesmaSolucao(zero, sol), "Tabu aceitou parametro invalido ou alterou entrada");
+    }
     ParametrosExecucao fluxo;
     fluxo.construcao.limiteSegundos = 0; fluxo.segundosRefinamento = 0.05; fluxo.sa = p;
     semente(777); estado = gerador;
     auto resultado = executarFluxo(i, fluxo);
     verificar(resultado.saExecutado && resultado.estatisticasSA.propostas == 200 && resultado.solucao.funcaoObjetivo <= resultado.custoAposSA && gerador == estado, "Fluxo completo ou isolamento do RNG incorreto");
+    fluxo.executarTabu = true; fluxo.tabu = tabu; fluxo.tabu.tempoMax = 60;
+    resultado = executarFluxo(i, fluxo);
+    verificar(resultado.tabuExecutado && resultado.custoAposTabu <= resultado.custoAposSA && resultado.solucao.funcaoObjetivo <= resultado.custoAposTabu && gerador == estado, "Tabu nao foi integrada entre SA e refinamento");
 }
 }
 
