@@ -1,7 +1,16 @@
 # Branch and Bound oficial
 
 Ensaios sobre a ordem em relacao a busca tabu estao em
-[posicionamento do B&B](posicao_bb.md). O fluxo simples mantem B&B depois da tabu.
+[posicionamento do B&B](posicao_bb.md). Com Tabu ativa, o fluxo divide o tempo
+de B&B igualmente antes e depois dela. O limite de grupos tambem e dividido,
+e as duas passagens compartilham o mesmo gerador aleatorio.
+
+```powershell
+./bin/competicao.exe --tabu-segundos 1 --refinamento-segundos 1 instancia/alliances.json
+```
+
+Nesse exemplo, o refinamento recebe 0,5 s em cada passagem. Sem Tabu, ou com
+`--enumeracao`, o refinamento roda em uma unica passagem final.
 
 `refinarGrupo` usa B&B por padrao. `branchAndBound` permite fornecer listas
 explicitas; `enumerarGrupo` continua sendo a referencia exaustiva. As estruturas

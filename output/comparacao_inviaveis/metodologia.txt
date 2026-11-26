@@ -1,0 +1,13 @@
+Base remota: origin/AceitacaoSolucoesInviaveis (e26a1c2).
+Base local: FuncoesBasicas (69cba1f).
+A ponta remota tem a API antiga de SA, incompativel com main/fluxo.
+A referencia branch_final usa avaliador e movimentos da ponta remota e reparo de
+compatibilidade com o SA de oito movimentos, mantendo a permissao desligada
+como no executavel remoto. Cada modo usa esse mesmo motor.
+nosso_dividido: mesma referencia com B&B antes e depois da Tabu.
+penalizado_final e penalizado_dividido: habilitam a permissao durante o SA.
+Tres sementes (7, 42, 2026), tres instancias, quatro modos em ordem alternada.
+Mesmos custos de construcao dentro de cada par. Limite da construcao 5 s
+(ate 200 blocos), SA 0.5 s, Tabu 1 s, refinamento 1 s total.
+A parada por tempo pode variar. Compilacao/testes de regressao ocorreram
+durante parte da campanha. Todos os JSONs foram reavaliados em Python.
