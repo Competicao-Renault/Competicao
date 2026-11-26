@@ -132,10 +132,18 @@ int main(int argc, char **argv) {
                       << " tabu_s=" << resultado.estatisticasTabu.tempoExecucao << " tabu_propostas=" << resultado.estatisticasTabu.propostas
                       << " BB_nos=" << resultado.nosBB << " BB_podas=" << resultado.podasBB
                       << " saida=" << destino.u8string() << '\n';
-            if (resultado.saExecutado) for (std::size_t i = 0; i < numeroMovimentosSA; ++i) {
+            if (resultado.saExecutado) {
                 const auto &e = resultado.estatisticasSA;
-                std::cout << "  " << nomeMovimentoSA(static_cast<MovimentoSA>(i)) << ": propostas=" << e.propostasPorMovimento[i]
-                          << " viaveis=" << e.viaveisPorMovimento[i] << " aceitos=" << e.aceitosPorMovimento[i] << '\n';
+                std::cout << "  SA avaliados=" << e.candidatosAvaliados << " viaveis=" << e.candidatosViaveis
+                          << " melhorias=" << e.melhoriasAceitas << " empates=" << e.empatesAceitos
+                          << " pioras=" << e.piorasAceitas << " recordes=" << e.recordes
+                          << " niveis=" << e.niveisConcluidos << " temperatura=" << e.temperaturaFinal
+                          << " custo_corrente_penalizado=" << e.custoCorrente << '\n';
+                for (std::size_t i = 0; i < numeroMovimentosSA; ++i) {
+                    std::cout << "  " << nomeMovimentoSA(static_cast<MovimentoSA>(i)) << ": propostas=" << e.propostasPorMovimento[i]
+                              << " avaliados=" << e.avaliadosPorMovimento[i] << " viaveis=" << e.viaveisPorMovimento[i]
+                              << " aceitos=" << e.aceitosPorMovimento[i] << '\n';
+                }
             }
         }
     } catch (const std::exception &erro) { std::cerr << "Erro: " << erro.what() << '\n'; return 1; }

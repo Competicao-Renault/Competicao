@@ -132,10 +132,10 @@ bool movimentoAleatorio(const Instancia &inst, Solucao &sol, int tentativas) {
 
 namespace {
 int sorteio(int n) { return inteiroAleatorio(0, n - 1); }
-int melhorRota(const Instancia &inst, int fluxo, int companhia, int excluida) {
+int melhorRota(const Instancia &inst, int fluxo, int companhia, int excluida, bool exigirRobustez) {
     int melhor = -1;
     for (int r : inst.fluxos[fluxo].rotas)
-        if (r != excluida && inst.rotas[r].companhia == companhia && (melhor < 0 || inst.custosRotas[r] < inst.custosRotas[melhor])) melhor = r;
+        if (inst.rotas[r].companhia == companhia && parRobusto(inst, r, excluida, exigirRobustez) && (melhor < 0 || inst.custosRotas[r] < inst.custosRotas[melhor])) melhor = r;
     return melhor;
 }
 std::vector<int> fluxosDaCompanhia(const Instancia &inst, const Solucao &sol, int companhia) {
@@ -163,7 +163,10 @@ bool redividirFluxo(const Instancia &inst, Solucao &sol, int fluxo, int rotaA, i
 }
 
 bool substituirPar(const Instancia &inst, Solucao &sol, int fluxo, int novaRota1, int novaRota2, std::string *motivo) {
-    if (!existeFluxo(inst, sol, fluxo)) return rejeitar(motivo, "Fluxo invalido");
+    if (!existeFluxo(inst, sol, fluxo) || novaRota1 < -1 || novaRota2 < -1 ||
+        novaRota1 >= static_cast<int>(inst.rotas.size()) || novaRota2 >= static_cast<int>(inst.rotas.size())) {
+        return rejeitar(motivo, "Fluxo ou rota invalida");
+    }
     AlocacaoFluxo a = sol.alocacoes[fluxo];
     if (novaRota1 >= 0) a.rota1 = novaRota1;
     if (novaRota2 >= 0 && a.quantidade2 > 0) a.rota2 = novaRota2;
@@ -172,18 +175,53 @@ bool substituirPar(const Instancia &inst, Solucao &sol, int fluxo, int novaRota1
 }
 
 bool migrarFluxos(const Instancia &inst, Solucao &sol, const std::vector<int> &fluxos, int de, int para, std::string *motivo) {
-    if (para < 0 || para >= static_cast<int>(inst.companhias.size()) || de >= static_cast<int>(inst.companhias.size())) return rejeitar(motivo, "Companhia invalida");
+    if (motivo) {
+        motivo->clear();
+    }
+    const bool exigirRobustez = !sol.permitirInviavel;
+    if (para < 0 || para >= static_cast<int>(inst.companhias.size()) || de < -1 || de >= static_cast<int>(inst.companhias.size())) return rejeitar(motivo, "Companhia invalida");
     std::vector<std::pair<int, AlocacaoFluxo>> alteracoes;
+    std::vector<unsigned char> visto(inst.fluxos.size(), 0);
     for (int f : fluxos) {
-        if (!existeFluxo(inst, sol, f)) return rejeitar(motivo, "Fluxo invalido");
+        if (!existeFluxo(inst, sol, f) || visto[f]) return rejeitar(motivo, "Fluxo invalido ou repetido");
+        visto[f] = 1;
         AlocacaoFluxo a = sol.alocacoes[f];
-        auto trocar = [&](int &rota, int outra) {
-            int m = inst.rotas[rota].companhia, nova = (m == para || (de >= 0 && m != de)) ? -1 : melhorRota(inst, f, para, outra);
-            if (nova >= 0) rota = nova;
+        auto deveTrocar = [&](int rota) {
+            int m = inst.rotas[rota].companhia;
+            return m != para && (de == -1 || m == de);
         };
-        trocar(a.rota1, a.rota2);
-        if (a.quantidade2 > 0) trocar(a.rota2, a.rota1);
-        if (a.rota1 != sol.alocacoes[f].rota1 || a.rota2 != sol.alocacoes[f].rota2) alteracoes.push_back({f, a});
+        bool trocar1 = deveTrocar(a.rota1), trocar2 = a.rota2 >= 0 && deveTrocar(a.rota2);
+        if (!trocar1 && !trocar2) continue;
+        if (a.rota2 == -1 || (trocar1 && trocar2)) {
+            int melhor = melhorRota(inst, f, para, -1, exigirRobustez);
+            if (melhor >= 0 && inst.fluxos[f].demanda <= std::numeric_limits<int>::max()) {
+                a = {melhor, -1, static_cast<int>(inst.fluxos[f].demanda), 0};
+            }
+            else {
+                double custo = std::numeric_limits<double>::infinity();
+                AlocacaoFluxo par;
+                for (int r1 : inst.fluxos[f].rotas) for (int r2 : inst.fluxos[f].rotas) {
+                    if (a.rota2 < 0 || inst.rotas[r1].companhia != para || inst.rotas[r2].companhia != para || !parRobusto(inst, r1, r2, exigirRobustez)) continue;
+                    double valor = static_cast<double>(inst.custosRotas[r1]) * a.quantidade1 + static_cast<double>(inst.custosRotas[r2]) * a.quantidade2;
+                    if (valor < custo) { custo = valor; par = {r1, r2, a.quantidade1, a.quantidade2}; }
+                }
+                if (!std::isfinite(custo)) return rejeitar(motivo, "Companhia sem alternativa robusta para o fluxo");
+                a = par;
+            }
+        } else {
+            int outra = a.rota1;
+            if (trocar1) outra = a.rota2;
+            int nova = melhorRota(inst, f, para, outra, exigirRobustez);
+            if (nova >= 0) {
+                if (trocar1) a.rota1 = nova;
+                else a.rota2 = nova;
+            } else if (inst.rotas[outra].companhia == para && parRobusto(inst, outra, -1, exigirRobustez) &&
+                       inst.fluxos[f].demanda <= std::numeric_limits<int>::max()) {
+                a = {outra, -1, static_cast<int>(inst.fluxos[f].demanda), 0};
+            }
+            else return rejeitar(motivo, "Migracao sem rota compativel");
+        }
+        alteracoes.push_back({f, a});
     }
     if (alteracoes.empty()) return rejeitar(motivo, "Nenhum fluxo pode migrar");
 

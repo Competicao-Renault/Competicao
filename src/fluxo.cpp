@@ -30,6 +30,7 @@ ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao 
             candidata = simulatedAnnealing(inst, sol, p.sa, &resultado.estatisticasSA);
         }
         std::string motivo;
+        candidata.permitirInviavel = false;
         if (!avaliarSolucao(inst, candidata, &motivo)) throw std::runtime_error("SA retornou solucao inviavel: " + motivo);
         if (candidata.funcaoObjetivo <= sol.funcaoObjetivo) sol = std::move(candidata);
         resultado.saExecutado = true;
