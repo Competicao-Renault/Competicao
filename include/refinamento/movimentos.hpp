@@ -16,4 +16,18 @@ bool substituirRota(const Instancia &inst, Solucao &solucao, int fluxo, int posi
 bool definirReutilizacao(const Instancia &inst, Solucao &solucao, int origem, int destino, int quantidade, std::string *motivo = nullptr);
 bool movimentoAleatorio(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 
+// Divide o fluxo entre rotaA (quantidadeA) e rotaB (resto); quantidadeA = 0 ou demanda deixa uma unica rota.
+bool redividirFluxo(const Instancia &inst, Solucao &solucao, int fluxo, int rotaA, int rotaB, int quantidadeA, std::string *motivo = nullptr);
+// Troca a rota 1 e/ou a rota 2 de um fluxo (-1 mantem a atual), preservando as quantidades.
+bool substituirPar(const Instancia &inst, Solucao &solucao, int fluxo, int novaRota1, int novaRota2 = -1, std::string *motivo = nullptr);
+// Move os fluxos listados da companhia "de" (-1 = qualquer) para "para", usando a rota mais barata de "para".
+bool migrarFluxos(const Instancia &inst, Solucao &solucao, const std::vector<int> &fluxos, int de, int para, std::string *motivo = nullptr);
+bool trocarCompanhia(const Instancia &inst, Solucao &solucao, int de, int para, std::string *motivo = nullptr); // Todos os fluxos de "de".
+bool unificarSite(const Instancia &inst, Solucao &solucao, int site, int companhia, std::string *motivo = nullptr); // Todos os fluxos do site.
+// Versoes sorteadas: aplicam a primeira proposta viavel em ate "tentativas" sorteios.
+bool movimentoDivisao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+bool movimentoSubstituicao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+bool movimentoCompanhia(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+bool movimentoSite(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+
 #endif
