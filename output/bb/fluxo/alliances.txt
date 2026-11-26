@@ -1,0 +1,9 @@
+alliances: inicial=375961680.00 apos_SA=361269136.00 final=344080949.00 SA=true blocos=86 aceitos=22 construcao_s=0.20 refinamento_s=0.27 SA_s=0.30 propostas=7787 Tabu=false apos_tabu=361269136.00 tabu_s=0.00 tabu_propostas=0 BB_nos=3496 BB_podas=2598 saida=output\bb\fluxo\alliances.json
+  aleatorio: propostas=709 viaveis=60 aceitos=54
+  divisao: propostas=1384 viaveis=757 aceitos=727
+  substituicao: propostas=1364 viaveis=145 aceitos=115
+  companhia: propostas=729 viaveis=7 aceitos=2
+  site: propostas=702 viaveis=14 aceitos=7
+  reutilizacao: propostas=742 viaveis=424 aceitos=424
+  grupo: propostas=739 viaveis=0 aceitos=0
+  quantidade: propostas=1418 viaveis=649 aceitos=640

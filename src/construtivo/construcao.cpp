@@ -149,6 +149,34 @@ std::vector<int> selecionarGrupo(const Instancia &inst, const Solucao &sol, std:
     return ids;
 }
 
+std::vector<std::vector<AlocacaoFluxo>> gerarAlternativasBloco(const Instancia &inst, const Solucao &sol, const std::vector<int> &grupo, int maximo, double limite) {
+    if (!sol.viavel || sol.alocacoes.size() != inst.fluxos.size() || grupo.empty() || maximo < 2 || !std::isfinite(limite) || limite < 0) throw std::invalid_argument("Parametros do gerador de alternativas invalidos");
+    Cronometro tempo;
+    std::vector<unsigned char> visto(inst.fluxos.size(), 0);
+    for (int f : grupo) {
+        if (f < 0 || f >= static_cast<int>(inst.fluxos.size()) || visto[f]) throw std::invalid_argument("Fluxo invalido ou repetido");
+        visto[f] = 1;
+    }
+    std::vector<std::vector<Inteiro>> cargas(inst.cenarios.size(), std::vector<Inteiro>(inst.companhias.size(), 0));
+    for (const auto &s : inst.cenarios) for (const auto &f : inst.fluxos) {
+        const auto &a = sol.alocacoes[f.id];
+        int m1 = inst.rotas[a.rota1].companhia;
+        cargas[s.id][m1] += cargaFluxo(inst, sol, f.id, s.id, m1);
+        if (a.rota2 >= 0 && inst.rotas[a.rota2].companhia != m1) {
+            int m2 = inst.rotas[a.rota2].companhia;
+            cargas[s.id][m2] += cargaFluxo(inst, sol, f.id, s.id, m2);
+        }
+    }
+    std::vector<std::vector<AlocacaoFluxo>> listas;
+    for (int f : grupo) {
+        if (tempo.segundosDecorridos() >= limite) return {};
+        listas.push_back(alternativas(inst, sol, f, grupo, cargas, maximo, tempo, limite));
+    }
+    if (tempo.segundosDecorridos() >= limite) return {};
+
+    return listas;
+}
+
 Solucao construirSolucao(const Instancia &inst, const ParametrosConstrucao &p, unsigned semente, EstatisticasConstrucao *estatisticas) {
     if (p.maximoBlocos < 0 || p.maximoFluxosBloco < 1 || p.alternativasPorFluxo < 2 || p.propostasPorBloco < 1 || p.tamanhoRCL < 1 || p.percentualAleatorio < 0 || p.percentualAleatorio > 100 || !std::isfinite(p.limiteSegundos) || p.limiteSegundos < 0) throw std::invalid_argument("Parametros da construtiva invalidos");
     Cronometro tempo;
@@ -160,18 +188,8 @@ Solucao construirSolucao(const Instancia &inst, const ParametrosConstrucao &p, u
     while (dados.blocos < p.maximoBlocos && tempo.segundosDecorridos() < p.limiteSegundos) {
         auto grupo = selecionarGrupo(inst, sol, rng, tamanho, p.percentualAleatorio);
         ++dados.blocos;
-        std::vector<std::vector<Inteiro>> cargas(inst.cenarios.size(), std::vector<Inteiro>(inst.companhias.size(), 0));
-        for (const auto &s : inst.cenarios) for (const auto &f : inst.fluxos) {
-            const auto &a = sol.alocacoes[f.id];
-            int m1 = inst.rotas[a.rota1].companhia;
-            cargas[s.id][m1] += cargaFluxo(inst, sol, f.id, s.id, m1);
-            if (a.rota2 >= 0 && inst.rotas[a.rota2].companhia != m1) {
-                int m2 = inst.rotas[a.rota2].companhia;
-                cargas[s.id][m2] += cargaFluxo(inst, sol, f.id, s.id, m2);
-            }
-        }
-        std::vector<std::vector<AlocacaoFluxo>> listas;
-        for (int f : grupo) listas.push_back(alternativas(inst, sol, f, grupo, cargas, p.alternativasPorFluxo, tempo, p.limiteSegundos));
+        auto listas = gerarAlternativasBloco(inst, sol, grupo, p.alternativasPorFluxo, std::max(0.0, p.limiteSegundos - tempo.segundosDecorridos()));
+        if (listas.empty()) break;
         std::vector<Solucao> rcl;
         const Chave atual = chave(inst, sol);
         for (int tentativa = 0; tentativa < p.propostasPorBloco && tempo.segundosDecorridos() < p.limiteSegundos; ++tentativa) {

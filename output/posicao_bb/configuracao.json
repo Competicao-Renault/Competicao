@@ -1,0 +1,27 @@
+{
+  "comando": [
+    "g++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-Iinclude",
+    "-Isrc",
+    "src\\construtivo\\construcao.cpp",
+    "src\\definicao_problema\\instancia.cpp",
+    "src\\definicao_problema\\solucao.cpp",
+    "src\\fluxo.cpp",
+    "src\\meta_heuristicas\\busca_tabu.cpp",
+    "src\\meta_heuristicas\\simulated_annealing.cpp",
+    "src\\refinamento\\movimentos.cpp",
+    "src\\refinamento\\refinamento.cpp",
+    "src\\utilitarios\\aleatorio.cpp",
+    "tests\\comparar_posicao_bb.cpp",
+    "-o",
+    "bin/comparar_posicao_bb.exe"
+  ],
+  "python": "3.13.12 (tags/v3.13.12:1cbe481, Feb  3 2026, 18:22:25) [MSC v.1944 64 bit (AMD64)]",
+  "compilador": "g++ (tdm64-1) 10.3.0"
+}

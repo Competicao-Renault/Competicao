@@ -4,6 +4,7 @@
 #include "construtivo/construcao.hpp"
 #include "meta_heuristicas/simulated_annealing.hpp"
 #include "meta_heuristicas/busca_tabu.hpp"
+#include "refinamento/refinamento.hpp"
 #include <functional>
 
 using EtapaSA = std::function<void(const Instancia &, Solucao &, unsigned)>;
@@ -16,6 +17,8 @@ struct ParametrosExecucao {
     unsigned semente = 1;
     int maximoGruposRefinamento = 100;
     double segundosRefinamento = 0.5;
+    ParametrosRefinamento refinamento;
+    int tamanhoGrupoRefinamento = 3;
 };
 struct ResultadoExecucao {
     Solucao solucao;
@@ -26,6 +29,7 @@ struct ResultadoExecucao {
     bool tabuExecutado = false;
     double custoConstrucao = 0, custoAposSA = 0, segundosRefinamento = 0;
     int melhoriasRefinamento = 0;
+    int nosBB = 0, podasBB = 0;
     bool saExecutado = false;
 };
 

@@ -15,7 +15,7 @@ struct SementeTemporaria {
 }
 
 ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao &p, const EtapaSA &sa) {
-    if (p.maximoGruposRefinamento < 0 || !std::isfinite(p.segundosRefinamento) || p.segundosRefinamento < 0) throw std::invalid_argument("Parametros do fluxo invalidos");
+    if (p.maximoGruposRefinamento < 0 || !std::isfinite(p.segundosRefinamento) || p.segundosRefinamento < 0 || p.tamanhoGrupoRefinamento < 2 || p.tamanhoGrupoRefinamento > 6) throw std::invalid_argument("Parametros do fluxo invalidos");
     if (!sa && p.executarSA) validarParametrosSA(p.sa);
     if (p.executarTabu) validarParametrosTabu(p.tabu);
     ResultadoExecucao resultado;
@@ -50,10 +50,13 @@ ResultadoExecucao executarFluxo(const Instancia &inst, const ParametrosExecucao 
     for (int i = 0; i < p.maximoGruposRefinamento && inst.fluxos.size() >= 2; ++i) {
         double restante = p.segundosRefinamento - tempo.segundosDecorridos();
         if (restante <= 0) break;
-        auto grupo = selecionarGrupo(inst, sol, rng, std::min(3, static_cast<int>(inst.fluxos.size())), p.construcao.percentualAleatorio);
-        ParametrosRefinamento limites;
-        limites.limiteSegundos = std::min(0.2, restante);
-        resultado.melhoriasRefinamento += refinarGrupo(inst, sol, grupo, limites).melhorou;
+        auto grupo = selecionarGrupo(inst, sol, rng, std::min(p.tamanhoGrupoRefinamento, static_cast<int>(inst.fluxos.size())), p.construcao.percentualAleatorio);
+        ParametrosRefinamento limites = p.refinamento;
+        limites.limiteSegundos = std::min({0.2, restante, limites.limiteSegundos});
+        auto busca = refinarGrupo(inst, sol, grupo, limites);
+        resultado.melhoriasRefinamento += busca.melhorou;
+        resultado.nosBB += busca.nosVisitados;
+        resultado.podasBB += busca.podasCusto + busca.podasCapacidade + busca.podasMinimo;
         for (int f : grupo) {
             if (tempo.segundosDecorridos() >= p.segundosRefinamento) break;
             resultado.melhoriasRefinamento += refinarQuantidade(inst, sol, f).melhorou;

@@ -1,0 +1,39 @@
+{
+  "orcamento_por_metodo_s": 0.5,
+  "sementes": [
+    7,
+    42,
+    2026,
+    11,
+    19
+  ],
+  "metodos": [
+    "enumeracao3",
+    "bb3",
+    "bb_comercial3",
+    "compensado",
+    "contrato",
+    "bb_compensado3",
+    "bb4"
+  ],
+  "entradas": 15,
+  "execucoes": 105,
+  "listas_pareadas": 75,
+  "construcao": {
+    "maximoBlocos": 60,
+    "limiteSegundos": 60
+  },
+  "SA": {
+    "maxPropostas": 3000,
+    "saMax": 10000,
+    "tempoLimite": 60
+  },
+  "p_busca": {
+    "maximoAlternativas": 6,
+    "maximoNos": 100000,
+    "maximoCombinacoes": 100000,
+    "limite_por_chamada_s": 0.1
+  },
+  "compilador": "g++ (tdm64-1) 10.3.0",
+  "flags": "-std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror"
+}

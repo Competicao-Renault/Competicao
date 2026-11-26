@@ -79,10 +79,13 @@ int main(int argc, char **argv) {
                           << "SA: --sa-segundos T --sa-max N --sa-max-propostas N --sa-temperatura-inicial T "
                           << "--sa-temperatura-final T --sa-alfa A --sa-pesos p1,...,p8 --sa-aleatorio-grupos P\n"
                           << "Tabu opcional: --tabu|--sem-tabu --tabu-segundos T --tabu-lista N --tabu-vizinhos N "
-                          << "--tabu-iteracoes N --tabu-max-propostas N\n";
+                          << "--tabu-iteracoes N --tabu-max-propostas N\n"
+                          << "Refinamento: --bb|--enumeracao --alternativas-comerciais|--alternativas-basicas\n";
                 return 0;
             }
             if (arg == "--sa" || arg == "--sem-sa") { parametros.executarSA = arg == "--sa"; continue; }
+            if (arg == "--bb" || arg == "--enumeracao") { parametros.refinamento.usarBB = arg == "--bb"; continue; }
+            if (arg == "--alternativas-comerciais" || arg == "--alternativas-basicas") { parametros.refinamento.alternativasComerciais = arg == "--alternativas-comerciais"; continue; }
             if (arg == "--tabu" || arg == "--sem-tabu") { parametros.executarTabu = arg == "--tabu"; continue; }
             if (arg.compare(0, 7, "--tabu-") == 0) {
                 if (++i == argumentos.size()) throw std::invalid_argument("Falta valor para " + arg);
@@ -127,6 +130,7 @@ int main(int argc, char **argv) {
                       << " SA_s=" << resultado.estatisticasSA.tempoExecucao << " propostas=" << resultado.estatisticasSA.propostas
                       << " Tabu=" << resultado.tabuExecutado << " apos_tabu=" << resultado.custoAposTabu
                       << " tabu_s=" << resultado.estatisticasTabu.tempoExecucao << " tabu_propostas=" << resultado.estatisticasTabu.propostas
+                      << " BB_nos=" << resultado.nosBB << " BB_podas=" << resultado.podasBB
                       << " saida=" << destino.u8string() << '\n';
             if (resultado.saExecutado) for (std::size_t i = 0; i < numeroMovimentosSA; ++i) {
                 const auto &e = resultado.estatisticasSA;

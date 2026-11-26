@@ -339,3 +339,62 @@ bool movimentoGrupo(const Instancia &inst, Solucao &sol, int tentativas, int per
 
     return false;
 }
+
+namespace {
+int volumeCompanhia(const Instancia &inst, const AlocacaoFluxo &a, int companhia) {
+    if (a.rota2 < 0 || inst.rotas[a.rota1].companhia == inst.rotas[a.rota2].companhia) return -1;
+    if (inst.rotas[a.rota1].companhia == companhia) return a.quantidade1;
+    if (inst.rotas[a.rota2].companhia == companhia) return a.quantidade2;
+    return -1;
+}
+}
+bool compensarFluxos(const Instancia &inst, Solucao &sol, int f1, int f2, int companhia, int delta, std::string *motivo) {
+    if (!existeFluxo(inst, sol, f1) || !existeFluxo(inst, sol, f2) || f1 == f2 || companhia < 0 || companhia >= static_cast<int>(inst.companhias.size()) || delta == 0) return rejeitar(motivo, "Compensacao invalida");
+    auto a = sol.alocacoes[f1], b = sol.alocacoes[f2];
+    int q1 = volumeCompanhia(inst, a, companhia), q2 = volumeCompanhia(inst, b, companhia);
+    Inteiro novo1 = Inteiro(q1) + delta, novo2 = Inteiro(q2) - delta;
+    if (q1 < 0 || q2 < 0 || novo1 < 0 || novo1 > inst.fluxos[f1].demanda || novo2 < 0 || novo2 > inst.fluxos[f2].demanda) return rejeitar(motivo, "Volumes fora dos limites");
+    if (inst.rotas[a.rota1].companhia == companhia) { a.quantidade1 = static_cast<int>(novo1); a.quantidade2 = static_cast<int>(inst.fluxos[f1].demanda - novo1); }
+    else { a.quantidade2 = static_cast<int>(novo1); a.quantidade1 = static_cast<int>(inst.fluxos[f1].demanda - novo1); }
+    if (inst.rotas[b.rota1].companhia == companhia) { b.quantidade1 = static_cast<int>(novo2); b.quantidade2 = static_cast<int>(inst.fluxos[f2].demanda - novo2); }
+    else { b.quantidade2 = static_cast<int>(novo2); b.quantidade1 = static_cast<int>(inst.fluxos[f2].demanda - novo2); }
+
+    return alterarAlocacoes(inst, sol, {{f1, a}, {f2, b}}, motivo);
+}
+bool movimentoCompensado(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol)) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int f1 = sorteio(static_cast<int>(inst.fluxos.size()));
+        int m = inst.rotas[sol.alocacoes[f1].rota1].companhia, q1 = volumeCompanhia(inst, sol.alocacoes[f1], m);
+        if (q1 < 0) continue;
+        std::vector<int> outros;
+        for (const auto &f : inst.fluxos) if (f.id != f1 && volumeCompanhia(inst, sol.alocacoes[f.id], m) >= 0) outros.push_back(f.id);
+        if (outros.empty()) continue;
+        int f2 = outros[sorteio(static_cast<int>(outros.size()))];
+        if (sorteio(2) == 0) std::swap(f1, f2);
+        int limite = static_cast<int>(std::min(inst.fluxos[f1].demanda - volumeCompanhia(inst, sol.alocacoes[f1], m), Inteiro(volumeCompanhia(inst, sol.alocacoes[f2], m))));
+        if (limite > 0 && compensarFluxos(inst, sol, f1, f2, m, inteiroAleatorio(1, limite))) return true;
+    }
+    return false;
+}
+bool fecharContrato(const Instancia &inst, Solucao &sol, int companhia, int site, int destino, std::string *motivo) {
+    if (!prontoParaSortear(inst, sol) || site < 0 || site >= static_cast<int>(inst.sites.size()) || companhia < 0 || companhia >= static_cast<int>(inst.companhias.size())) return rejeitar(motivo, "Contrato invalido");
+    std::vector<int> fluxos;
+    for (const auto &f : inst.fluxos) if (f.origem == site || f.destino == site) {
+        const auto &a = sol.alocacoes[f.id];
+        if (inst.rotas[a.rota1].companhia == companhia || (a.rota2 >= 0 && inst.rotas[a.rota2].companhia == companhia)) fluxos.push_back(f.id);
+    }
+    return migrarFluxos(inst, sol, fluxos, companhia, destino, motivo);
+}
+bool movimentoContrato(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol)) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int f = sorteio(static_cast<int>(inst.fluxos.size())), site = inst.fluxos[f].origem;
+        if (sorteio(2) == 0) site = inst.fluxos[f].destino;
+        int companhia = inst.rotas[sol.alocacoes[f].rota1].companhia;
+        const auto &rotas = inst.fluxos[f].rotas;
+        int destino = inst.rotas[rotas[sorteio(static_cast<int>(rotas.size()))]].companhia;
+        if (companhia != destino && fecharContrato(inst, sol, companhia, site, destino)) return true;
+    }
+    return false;
+}

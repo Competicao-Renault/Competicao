@@ -1,0 +1,9 @@
+strikes: inicial=515357081.00 apos_SA=476999665.00 final=464616413.00 SA=true blocos=56 aceitos=0 construcao_s=0.20 refinamento_s=0.30 SA_s=0.30 propostas=7079 Tabu=false apos_tabu=476999665.00 tabu_s=0.00 tabu_propostas=0 BB_nos=834 BB_podas=649 saida=output\bb\fluxo\strikes.json
+  aleatorio: propostas=641 viaveis=1 aceitos=0
+  divisao: propostas=1303 viaveis=79 aceitos=60
+  substituicao: propostas=1256 viaveis=5 aceitos=3
+  companhia: propostas=637 viaveis=0 aceitos=0
+  site: propostas=641 viaveis=4 aceitos=1
+  reutilizacao: propostas=685 viaveis=322 aceitos=321
+  grupo: propostas=651 viaveis=0 aceitos=0
+  quantidade: propostas=1265 viaveis=50 aceitos=47

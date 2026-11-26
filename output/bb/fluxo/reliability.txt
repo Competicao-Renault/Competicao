@@ -1,0 +1,9 @@
+reliability: inicial=515357081.00 apos_SA=407568769.00 final=366201845.00 SA=true blocos=37 aceitos=0 construcao_s=0.20 refinamento_s=0.30 SA_s=0.30 propostas=4993 Tabu=false apos_tabu=407568769.00 tabu_s=0.00 tabu_propostas=0 BB_nos=1942 BB_podas=1495 saida=output\bb\fluxo\reliability.json
+  aleatorio: propostas=475 viaveis=58 aceitos=53
+  divisao: propostas=919 viaveis=416 aceitos=379
+  substituicao: propostas=856 viaveis=99 aceitos=92
+  companhia: propostas=443 viaveis=4 aceitos=0
+  site: propostas=465 viaveis=15 aceitos=8
+  reutilizacao: propostas=467 viaveis=286 aceitos=286
+  grupo: propostas=494 viaveis=3 aceitos=3
+  quantidade: propostas=874 viaveis=284 aceitos=279

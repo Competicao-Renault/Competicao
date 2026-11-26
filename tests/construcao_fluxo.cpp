@@ -88,6 +88,7 @@ void testarFluxo() {
     p.construcao.limiteSegundos = 0; p.segundosRefinamento = 0.1;
     auto refinado = executarFluxo(inst, p);
     verificar(!refinado.saExecutado && refinado.solucao.funcaoObjetivo < refinado.custoConstrucao, "Refinamento final nao executou");
+    verificar(refinado.nosBB > 0 && refinado.podasBB > 0, "Fluxo oficial nao executou B&B com podas");
 }
 }
 

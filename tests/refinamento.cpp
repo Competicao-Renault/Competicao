@@ -161,11 +161,73 @@ void testarGrupos() {
     semente(456); refinarGrupo(i, s, {0, 2});
     verificar(inteiroAleatorio(0, 1000000) == proximo, "Refinamento consumiu RNG do SA");
 }
+
+void testarBB() {
+    std::mt19937 rng(456);
+    int podas = 0;
+    ParametrosRefinamento p; p.limiteSegundos = 10; p.maximoCombinacoes = 100000; p.maximoNos = 100000;
+    for (int caso = 0; caso < 160; ++caso) {
+        auto i = exemplo();
+        i.meta.alpha = (rng() % 15) / 100.0;
+        for (int m : {0, 1}) { i.companhias[m].capacidade = 40 + rng() % 51; i.companhias[m].custoFixo = rng() % 501; }
+        for (auto &r : i.rotas) if (r.companhia != i.companhiaSpot) { r.custoMaritimo = rng() % 101; i.custosRotas[r.id] = r.custoMaritimo + 10; }
+        auto base = dividida(i);
+        for (int f = 0; f < 3; ++f) for (int m = 0; m < 2; ++m) {
+            int q = rng() % 10;
+            if (q > 0) base.reutilizacoes.push_back({3*f+m, 3*((f+1)%3)+m, q});
+        }
+        verificar(avaliarSolucao(i, base), "Entrada diferencial BB invalida");
+        std::vector<int> fluxos{0, 1, 2}; std::shuffle(fluxos.begin(), fluxos.end(), rng);
+        if (caso % 2) fluxos.resize(2);
+        p.alternativasComerciais = caso % 3 == 0;
+        auto grupo = gerarAlternativasGrupo(i, base, fluxos, p);
+        auto a = base, b = base;
+        auto enumeracao = enumerarGrupo(i, a, grupo, p), bb = branchAndBound(i, b, grupo, p);
+        verificar(enumeracao.concluido && bb.concluido && a.funcaoObjetivo == b.funcaoObjetivo, "BB divergiu da enumeracao exaustiva");
+        verificar(bb.candidatosTestados <= enumeracao.candidatosTestados && b.viavel, "BB excedeu folhas ou perdeu viabilidade");
+        auto conferir = b;
+        verificar(avaliarSolucao(i, conferir) && conferir.custosCenarios == b.custosCenarios, "BB retornou cache incorreto");
+        podas += bb.podasCusto + bb.podasCapacidade + bb.podasMinimo;
+    }
+    verificar(podas > 0, "BB nao executou podas");
+    auto i = exemplo(); i.meta.alpha = 0.25;
+    auto base = criarSolucaoSpot(i), sol = base;
+    std::vector<AlternativasFluxo> grupo{{0, {{0, -1, 20, 0}}}, {2, {{6, -1, 20, 0}}}};
+    auto bb = branchAndBound(i, sol, grupo, p);
+    verificar(bb.concluido && bb.melhorou && bb.podasMinimo > 0, "Poda de minimo bloqueou ativacao conjunta");
+    sol = base; p.maximoNos = 1;
+    bb = branchAndBound(i, sol, grupo, p);
+    verificar(!bb.concluido && bb.nosVisitados == 1 && sol.funcaoObjetivo == base.funcaoObjetivo, "Limite de nos invalido");
+    p.maximoNos = 100000;
+    auto antes = sol;
+    verificar(!compensarFluxos(i, sol, 0, 0, 0, 1) && sol.funcaoObjetivo == antes.funcaoObjetivo, "Compensacao invalida alterou entrada");
+    i = exemplo(); i.cenarios = {{0, {}}}; i.indisponivel.resize(1); i.companhias[0].capacidade = 30;
+    sol = dividida(i);
+    verificar(!transferirQuantidade(i, sol, 0, 1), "Caso saturado nao bloqueou movimento individual");
+    verificar(compensarFluxos(i, sol, 0, 1, 0, 1) && sol.alocacoes[0].quantidade1 == 11 && sol.alocacoes[1].quantidade1 == 9, "Transferencia compensada falhou");
+    verificar(fecharContrato(i, sol, 0, 0, i.companhiaSpot) && sol.viavel, "Fechamento de contrato falhou");
+    verificar(sol.alocacoes[0].rota1 == 2 && sol.alocacoes[2].rota1 == 8, "Contrato permaneceu ativo no site");
+    i = exemplo();
+    auto fluxosOriginais = i.fluxos; auto rotasOriginais = i.rotas; auto custosOriginais = i.custosRotas;
+    for (auto f : fluxosOriginais) { f.id += 3; for (auto &r : f.rotas) r += 9; i.fluxos.push_back(f); }
+    for (auto r : rotasOriginais) { r.id += 9; r.fluxo += 3; i.rotas.push_back(r); }
+    i.custosRotas.insert(i.custosRotas.end(), custosOriginais.begin(), custosOriginais.end());
+    for (auto &s : i.cenarios) { auto falhas = s.rotasIndisponiveis; for (int r : falhas) s.rotasIndisponiveis.push_back(r + 9); }
+    i.indisponivel.assign(3, std::vector<unsigned char>(18, 0));
+    for (const auto &s : i.cenarios) for (int r : s.rotasIndisponiveis) i.indisponivel[s.id][r] = 1;
+    for (auto &m : i.companhias) m.capacidade = 200;
+    for (auto &porto : i.portos) porto.capacidade = 240;
+    i.demandaTotal = 120; grupo.clear();
+    for (int f = 0; f < 6; ++f) { int r = 3*f; if (f % 3 == 1) ++r; grupo.push_back({f, {{r, -1, 20, 0}}}); }
+    base = criarSolucaoSpot(i); sol = base;
+    auto completa = enumerarGrupo(i, base, grupo, p); bb = branchAndBound(i, sol, grupo, p);
+    verificar(completa.concluido && bb.concluido && base.funcaoObjetivo == sol.funcaoObjetivo, "BB de seis fluxos divergiu da referencia");
+}
 }
 
 int main() {
     try {
-        testarQuantidades(); testarGrupos();
+        testarQuantidades(); testarGrupos(); testarBB();
         for (const std::string nome : {"alliances", "reliability", "strikes"}) {
             const auto inst = lerInstancia("instancia/" + nome + ".json");
             auto s = criarSolucaoSpot(inst);

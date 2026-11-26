@@ -1,9 +1,11 @@
 #include "refinamento/refinamento.hpp"
 #include "refinamento/movimentos.hpp"
+#include "construtivo/construcao.hpp"
 #include "utilitarios/cronometro.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <numeric>
 
 namespace {
 void exigir(bool condicao, const char *mensagem) {
@@ -17,10 +19,10 @@ Solucao entradaValidada(const Instancia &inst, const Solucao &sol) {
     return base;
 }
 void validarParametros(const ParametrosRefinamento &p) {
-    exigir(p.maximoAlternativas >= 2 && p.maximoCombinacoes > 0 && std::isfinite(p.limiteSegundos) && p.limiteSegundos > 0, "Limites de refinamento invalidos");
+    exigir(p.maximoAlternativas >= 2 && p.maximoCombinacoes > 0 && p.maximoNos > 0 && std::isfinite(p.limiteSegundos) && p.limiteSegundos > 0, "Limites de refinamento invalidos");
 }
 void validarFluxos(const Instancia &inst, const std::vector<int> &fluxos) {
-    exigir(fluxos.size() == 2 || fluxos.size() == 3, "O grupo deve ter dois ou tres fluxos");
+    exigir(fluxos.size() >= 2 && fluxos.size() <= 6, "O grupo deve ter de dois a seis fluxos");
     std::vector<int> ids = fluxos;
     std::sort(ids.begin(), ids.end());
     exigir(ids.front() >= 0 && ids.back() < static_cast<int>(inst.fluxos.size()) && std::adjacent_find(ids.begin(), ids.end()) == ids.end(), "Fluxos invalidos ou repetidos");
@@ -71,6 +73,114 @@ ResultadoRefinamento enumerar(const Instancia &inst, Solucao &sol, const Solucao
         for (const auto &a : grupo[nivel].alocacoes) {
             alteracoes[nivel] = {grupo[nivel].fluxo, a};
             visitar(visitar, nivel + 1);
+            if (!resultado.concluido) break;
+        }
+    };
+    visitar(visitar, 0);
+    resultado.melhorou = instalar(sol, melhor, base.funcaoObjetivo);
+
+    return resultado;
+}
+
+ResultadoRefinamento buscarBB(const Instancia &inst, Solucao &sol, const Solucao &base, const std::vector<AlternativasFluxo> &grupo, const ParametrosRefinamento &p, const Cronometro &tempo) {
+    ResultadoRefinamento resultado;
+    if (tempo.segundosDecorridos() >= p.limiteSegundos) { resultado.concluido = false; return resultado; }
+    const int ns = static_cast<int>(inst.cenarios.size()), np = static_cast<int>(inst.portos.size());
+    const int nm = static_cast<int>(inst.companhias.size()), nt = static_cast<int>(inst.sites.size()), nr = np + nm;
+    const std::size_t n = grupo.size();
+    struct Perfil { std::vector<Inteiro> carga; std::vector<long double> custo; std::vector<std::vector<int>> contratos; };
+    auto perfil = [&](int f, const AlocacaoFluxo &a) {
+        Perfil v{std::vector<Inteiro>(ns * nr, 0), std::vector<long double>(ns, 0), std::vector<std::vector<int>>(ns)};
+        for (const auto &s : inst.cenarios) {
+            auto adicionar = [&](int r, Inteiro q) {
+                const auto &rota = inst.rotas[r];
+                v.carga[s.id * nr + rota.portoOrigem] += q;
+                v.carga[s.id * nr + rota.portoDestino] += q;
+                v.carga[s.id * nr + np + rota.companhia] += q;
+                v.custo[s.id] += static_cast<long double>(inst.custosRotas[r]) * q;
+                for (int t : {inst.fluxos[f].origem, inst.fluxos[f].destino}) v.contratos[s.id].push_back(rota.companhia * nt + t);
+            };
+            if (inst.indisponivel[s.id][a.rota1]) adicionar(a.rota2, inst.fluxos[f].demanda);
+            else if (a.rota2 >= 0 && inst.indisponivel[s.id][a.rota2]) adicionar(a.rota1, inst.fluxos[f].demanda);
+            else { adicionar(a.rota1, a.quantidade1); if (a.rota2 >= 0) adicionar(a.rota2, a.quantidade2); }
+        }
+        return v;
+    };
+    std::vector<Inteiro> carga(ns * nr, 0), capacidade;
+    std::vector<int> contratos(ns * nm * nt, 0), sites(ns * nm, 0), ordem(ns);
+    std::vector<long double> custo(ns, 0), economia(ns, 0);
+    auto aplicar = [&](const Perfil &v, int sinal) {
+        for (std::size_t i = 0; i < carga.size(); ++i) carga[i] += sinal * v.carga[i];
+        for (int s = 0; s < ns; ++s) {
+            custo[s] += sinal * v.custo[s];
+            for (int c : v.contratos[s]) {
+                auto &contagem = contratos[s * nm * nt + c];
+                bool antes = contagem > 0;
+                contagem += sinal;
+                if (antes != (contagem > 0)) { sites[s * nm + c / nt] += sinal; custo[s] += sinal * static_cast<long double>(inst.companhias[c / nt].custoFixo); }
+            }
+        }
+    };
+    for (const auto &v : inst.portos) capacidade.push_back(v.capacidade);
+    for (const auto &v : inst.companhias) capacidade.push_back(v.capacidade);
+    std::vector<unsigned char> livre(inst.fluxos.size(), 0);
+    std::vector<std::vector<Perfil>> perfis(n);
+    for (std::size_t k = 0; k < n; ++k) {
+        livre[grupo[k].fluxo] = 1;
+        for (const auto &a : grupo[k].alocacoes) perfis[k].push_back(perfil(grupo[k].fluxo, a));
+    }
+    // Retira todos os fluxos livres antes de fixar qualquer alternativa da arvore.
+    for (const auto &f : inst.fluxos) if (!livre[f.id]) aplicar(perfil(f.id, base.alocacoes[f.id]), 1);
+    for (int s = 0; s < ns; ++s) for (const auto &y : base.reutilizacoes) {
+        if (inst.indisponivel[s][y.rotaOrigem] || inst.indisponivel[s][y.rotaDestino]) continue;
+        const auto &r1 = inst.rotas[y.rotaOrigem], &r2 = inst.rotas[y.rotaDestino];
+        int t = inst.fluxos[r1.fluxo].destino;
+        economia[s] += (static_cast<long double>(inst.custosRodoviarios[t][r1.portoDestino]) + inst.custosRodoviarios[t][r2.portoOrigem]) * y.quantidade;
+    }
+    std::vector<std::vector<long double>> minimoCusto(n + 1, std::vector<long double>(ns, 0));
+    std::vector<std::vector<Inteiro>> minimoCarga(n + 1, std::vector<Inteiro>(ns * nr, 0)), maximoCompanhia(n + 1, std::vector<Inteiro>(ns * nm, 0));
+    for (std::size_t k = n; k-- > 0;) {
+        for (int s = 0; s < ns; ++s) {
+            long double menor = std::numeric_limits<long double>::infinity();
+            for (const auto &v : perfis[k]) menor = std::min(menor, v.custo[s]);
+            minimoCusto[k][s] = minimoCusto[k + 1][s] + menor;
+            for (int r = 0; r < nr; ++r) {
+                Inteiro baixo = std::numeric_limits<Inteiro>::max(), alto = 0;
+                for (const auto &v : perfis[k]) { baixo = std::min(baixo, v.carga[s * nr + r]); alto = std::max(alto, v.carga[s * nr + r]); }
+                minimoCarga[k][s * nr + r] = minimoCarga[k + 1][s * nr + r] + baixo;
+                if (r >= np) maximoCompanhia[k][s * nm + r - np] = maximoCompanhia[k + 1][s * nm + r - np] + alto;
+            }
+        }
+    }
+    std::iota(ordem.begin(), ordem.end(), 0);
+    std::stable_sort(ordem.begin(), ordem.end(), [&](int a, int b) { return base.custosCenarios[a] > base.custosCenarios[b]; });
+    Solucao melhor = base;
+    std::vector<std::pair<int, AlocacaoFluxo>> alteracoes(n);
+    auto visitar = [&](auto &&visitar, std::size_t k) -> void {
+        if (!resultado.concluido) return;
+        if (tempo.segundosDecorridos() >= p.limiteSegundos || resultado.nosVisitados >= p.maximoNos || resultado.candidatosTestados >= p.maximoCombinacoes) { resultado.concluido = false; return; }
+        ++resultado.nosVisitados;
+        for (int s : ordem) {
+            for (int r = 0; r < nr; ++r) if (carga[s * nr + r] + minimoCarga[k][s * nr + r] > capacidade[r]) { ++resultado.podasCapacidade; return; }
+            for (const auto &m : inst.companhias) {
+                if (sites[s * nm + m.id] > m.maximoSites) { ++resultado.podasCapacidade; return; }
+                Inteiro volume = carga[s * nr + np + m.id];
+                if (m.id != inst.companhiaSpot && volume > 0 && volume + maximoCompanhia[k][s * nm + m.id] + 1e-9L < static_cast<long double>(inst.meta.alpha) * m.capacidade) { ++resultado.podasMinimo; return; }
+            }
+            // y apenas diminui em alterarAlocacoes: a economia original e um teto.
+            long double limite = custo[s] + minimoCusto[k][s] - economia[s];
+            long double margem = 1e-9L * (1 + std::abs(limite) + std::abs(static_cast<long double>(melhor.funcaoObjetivo)));
+            if (limite > melhor.funcaoObjetivo + margem) { ++resultado.podasCusto; return; }
+        }
+        if (k == n) {
+            ++resultado.candidatosTestados;
+            Solucao candidata = base;
+            if (alterarAlocacoes(inst, candidata, alteracoes) && candidata.funcaoObjetivo < melhor.funcaoObjetivo) melhor = std::move(candidata);
+            return;
+        }
+        for (std::size_t a = 0; a < perfis[k].size(); ++a) {
+            alteracoes[k] = {grupo[k].fluxo, grupo[k].alocacoes[a]};
+            aplicar(perfis[k][a], 1); visitar(visitar, k + 1); aplicar(perfis[k][a], -1);
             if (!resultado.concluido) break;
         }
     };
@@ -148,13 +258,11 @@ ResultadoRefinamento refinarQuantidade(const Instancia &inst, Solucao &sol, int 
     return resultado;
 }
 
-ResultadoRefinamento enumerarGrupo(const Instancia &inst, Solucao &sol, const std::vector<AlternativasFluxo> &grupo, const ParametrosRefinamento &p) {
-    Cronometro tempo;
-    validarParametros(p);
+namespace {
+std::vector<AlternativasFluxo> prepararGrupo(const Instancia &inst, const Solucao &base, const std::vector<AlternativasFluxo> &grupo, const ParametrosRefinamento &p) {
     std::vector<int> fluxos;
     for (const auto &g : grupo) fluxos.push_back(g.fluxo);
     validarFluxos(inst, fluxos);
-    const Solucao base = entradaValidada(inst, sol);
     std::vector<AlternativasFluxo> candidatos;
     for (const auto &g : grupo) {
         AlternativasFluxo lista{g.fluxo, {normalizar(inst, g.fluxo, base.alocacoes[g.fluxo])}};
@@ -163,14 +271,17 @@ ResultadoRefinamento enumerarGrupo(const Instancia &inst, Solucao &sol, const st
         candidatos.push_back(std::move(lista));
     }
 
-    return enumerar(inst, sol, base, candidatos, p, tempo);
+    return candidatos;
 }
 
-ResultadoRefinamento refinarGrupo(const Instancia &inst, Solucao &sol, const std::vector<int> &fluxos, const ParametrosRefinamento &p) {
-    Cronometro tempo;
-    validarParametros(p); validarFluxos(inst, fluxos);
-    const Solucao base = entradaValidada(inst, sol);
+std::vector<AlternativasFluxo> gerar(const Instancia &inst, const Solucao &base, const std::vector<int> &fluxos, const ParametrosRefinamento &p, const Cronometro &tempo) {
     std::vector<AlternativasFluxo> grupo;
+    if (p.alternativasComerciais) {
+        auto listas = gerarAlternativasBloco(inst, base, fluxos, p.maximoAlternativas, std::max(0.0, p.limiteSegundos - tempo.segundosDecorridos()));
+        if (listas.empty()) return {};
+        for (std::size_t k = 0; k < fluxos.size(); ++k) grupo.push_back({fluxos[k], std::move(listas[k])});
+        return grupo;
+    }
     for (int f : fluxos) {
         const auto &fluxo = inst.fluxos[f];
         int n = static_cast<int>(fluxo.demanda);
@@ -193,7 +304,7 @@ ResultadoRefinamento refinarGrupo(const Instancia &inst, Solucao &sol, const std
             opcoes.push_back({pior, a});
         };
         for (std::size_t i = 0; i < fluxo.rotas.size(); ++i) {
-            if (tempo.segundosDecorridos() >= p.limiteSegundos) { ResultadoRefinamento r; r.concluido = false; return r; }
+            if (tempo.segundosDecorridos() >= p.limiteSegundos) return {};
             int r1 = fluxo.rotas[i];
             if (parRobusto(inst, r1)) adicionar({r1, -1, n, 0});
             for (std::size_t j = i + 1; j < fluxo.rotas.size(); ++j) {
@@ -213,6 +324,39 @@ ResultadoRefinamento refinarGrupo(const Instancia &inst, Solucao &sol, const std
         }
         grupo.push_back(std::move(lista));
     }
+
+    return grupo;
+}
+}
+
+ResultadoRefinamento enumerarGrupo(const Instancia &inst, Solucao &sol, const std::vector<AlternativasFluxo> &grupo, const ParametrosRefinamento &p) {
+    Cronometro tempo;
+    validarParametros(p);
+    auto base = entradaValidada(inst, sol);
+    return enumerar(inst, sol, base, prepararGrupo(inst, base, grupo, p), p, tempo);
+}
+
+ResultadoRefinamento branchAndBound(const Instancia &inst, Solucao &sol, const std::vector<AlternativasFluxo> &grupo, const ParametrosRefinamento &p) {
+    Cronometro tempo;
+    validarParametros(p);
+    auto base = entradaValidada(inst, sol);
+    return buscarBB(inst, sol, base, prepararGrupo(inst, base, grupo, p), p, tempo);
+}
+
+std::vector<AlternativasFluxo> gerarAlternativasGrupo(const Instancia &inst, const Solucao &sol, const std::vector<int> &fluxos, const ParametrosRefinamento &p) {
+    Cronometro tempo;
+    validarParametros(p); validarFluxos(inst, fluxos);
+    return gerar(inst, entradaValidada(inst, sol), fluxos, p, tempo);
+}
+
+ResultadoRefinamento refinarGrupo(const Instancia &inst, Solucao &sol, const std::vector<int> &fluxos, const ParametrosRefinamento &p) {
+    Cronometro tempo;
+    validarParametros(p); validarFluxos(inst, fluxos);
+    auto base = entradaValidada(inst, sol);
+    auto grupo = gerar(inst, base, fluxos, p, tempo);
+    if (grupo.empty()) { ResultadoRefinamento r; r.concluido = false; return r; }
+    grupo = prepararGrupo(inst, base, grupo, p);
+    if (p.usarBB) return buscarBB(inst, sol, base, grupo, p, tempo);
 
     return enumerar(inst, sol, base, grupo, p, tempo);
 }

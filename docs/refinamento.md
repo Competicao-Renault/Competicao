@@ -1,5 +1,9 @@
 # Refinamento local
 
+Atualizacao: `refinarGrupo` agora usa [B&B](branch_and_bound.md) por padrao,
+com podas e limites de nos. `enumerarGrupo` permanece como referencia exaustiva.
+As descricoes abaixo da enumeracao continuam se referindo a essa referencia.
+
 Interface: `include/refinamento/refinamento.hpp`. O modulo depende apenas das
 estruturas, do avaliador, dos movimentos e do cronometro ja existentes. Nao
 altera o programa principal, a geracao inicial, o SA nem o gerador aleatorio.

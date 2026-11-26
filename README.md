@@ -40,6 +40,10 @@ refinamento. Use `--sem-sa` para desativa-lo. Consulte
 orcamentos, ou [construcao e fluxo](docs/construcao_fluxo.md) para usar um callback.
 A busca tabu do `cpm2.zip` pode ser ativada com `--tabu --tabu-segundos 1`,
 entre SA e refinamento. Fica desativada por padrao. Veja [integracao cpm2](docs/integracao_cpm2.md).
+O refinamento usa [Branch and Bound restrito](docs/branch_and_bound.md) por padrao.
+`--enumeracao` permite comparar com a busca exaustiva anterior.
+Os [testes de posicionamento](docs/posicao_bb.md) comparam B&B antes, depois
+e dividido em relacao a busca tabu, com orcamentos iguais.
 
 ## Solucoes e movimentos
 

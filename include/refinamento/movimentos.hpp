@@ -33,5 +33,10 @@ bool movimentoSite(const Instancia &inst, Solucao &solucao, int tentativas = 30)
 bool movimentoQuantidade(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoReutilizacao(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 bool movimentoGrupo(const Instancia &inst, Solucao &solucao, int tentativas = 30, int percentualAleatorio = 30);
+// Compensa o volume nominal de uma companhia entre dois fluxos, atomicamente.
+bool compensarFluxos(const Instancia &inst, Solucao &solucao, int fluxo1, int fluxo2, int companhia, int delta, std::string *motivo = nullptr);
+bool movimentoCompensado(const Instancia &inst, Solucao &solucao, int tentativas = 30);
+bool fecharContrato(const Instancia &inst, Solucao &solucao, int companhia, int site, int destino, std::string *motivo = nullptr);
+bool movimentoContrato(const Instancia &inst, Solucao &solucao, int tentativas = 30);
 
 #endif
