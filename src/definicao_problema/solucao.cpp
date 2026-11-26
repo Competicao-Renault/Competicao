@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <filesystem>
 #include <set>
 #include <stdexcept>
 
@@ -112,7 +113,7 @@ void salvarSolucao(const Instancia &inst, const Solucao &solucao, const std::str
     Solucao sol = solucao;
     std::string motivo;
     if (!avaliarSolucao(inst, sol, &motivo)) throw std::runtime_error("Exportacao de solucao inviavel: " + motivo);
-    std::ofstream arquivo(caminho);
+    std::ofstream arquivo(std::filesystem::u8path(caminho));
     if (!arquivo) throw std::runtime_error("Nao foi possivel abrir a saida: " + caminho);
     arquivo << "{\n  \"x\": [";
     bool primeiro = true;

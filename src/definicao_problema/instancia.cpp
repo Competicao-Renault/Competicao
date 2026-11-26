@@ -2,6 +2,7 @@
 #include "json.hpp"
 #include <cmath>
 #include <fstream>
+#include <filesystem>
 #include <iterator>
 #include <limits>
 
@@ -99,7 +100,7 @@ void validarEPreparar(Instancia &inst) {
 
 Instancia lerInstancia(const std::string &caminho) {
     try {
-        std::ifstream arquivo(caminho, std::ios::binary);
+        std::ifstream arquivo(std::filesystem::u8path(caminho), std::ios::binary);
         exigir(arquivo.is_open(), "Nao foi possivel abrir o arquivo");
         std::string conteudo((std::istreambuf_iterator<char>(arquivo)), std::istreambuf_iterator<char>());
         exigir(!arquivo.bad(), "Erro ao ler o arquivo");
