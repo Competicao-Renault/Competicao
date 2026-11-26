@@ -126,3 +126,130 @@ bool movimentoAleatorio(const Instancia &inst, Solucao &sol, int tentativas) {
 
     return false;
 }
+
+namespace {
+int sorteio(int n) { return inteiroAleatorio(0, n - 1); }
+int melhorRota(const Instancia &inst, int fluxo, int companhia, int excluida) {
+    int melhor = -1;
+    for (int r : inst.fluxos[fluxo].rotas)
+        if (r != excluida && inst.rotas[r].companhia == companhia && (melhor < 0 || inst.custosRotas[r] < inst.custosRotas[melhor])) melhor = r;
+    return melhor;
+}
+std::vector<int> fluxosDaCompanhia(const Instancia &inst, const Solucao &sol, int companhia) {
+    std::vector<int> lista;
+    for (const auto &a : sol.alocacoes) {
+        bool usa = inst.rotas[a.rota1].companhia == companhia || (a.rota2 >= 0 && inst.rotas[a.rota2].companhia == companhia);
+        if (usa) lista.push_back(static_cast<int>(&a - sol.alocacoes.data()));
+    }
+    return lista;
+}
+std::vector<int> fluxosDoSite(const Instancia &inst, int site) {
+    std::vector<int> lista;
+    for (const auto &f : inst.fluxos) if (f.origem == site || f.destino == site) lista.push_back(f.id);
+    return lista;
+}
+bool prontoParaSortear(const Instancia &inst, const Solucao &sol) { return !inst.fluxos.empty() && sol.alocacoes.size() == inst.fluxos.size(); }
+}
+
+bool redividirFluxo(const Instancia &inst, Solucao &sol, int fluxo, int rotaA, int rotaB, int quantidadeA, std::string *motivo) {
+    if (!existeFluxo(inst, sol, fluxo) || inst.fluxos[fluxo].demanda > std::numeric_limits<int>::max()) return rejeitar(motivo, "Fluxo invalido");
+    int demanda = static_cast<int>(inst.fluxos[fluxo].demanda);
+    if (quantidadeA < 0 || quantidadeA > demanda) return rejeitar(motivo, "Quantidade fora da demanda");
+
+    return alterarAlocacao(inst, sol, fluxo, {rotaA, rotaB, quantidadeA, demanda - quantidadeA}, motivo);
+}
+
+bool substituirPar(const Instancia &inst, Solucao &sol, int fluxo, int novaRota1, int novaRota2, std::string *motivo) {
+    if (!existeFluxo(inst, sol, fluxo)) return rejeitar(motivo, "Fluxo invalido");
+    AlocacaoFluxo a = sol.alocacoes[fluxo];
+    if (novaRota1 >= 0) a.rota1 = novaRota1;
+    if (novaRota2 >= 0 && a.quantidade2 > 0) a.rota2 = novaRota2;
+
+    return alterarAlocacao(inst, sol, fluxo, a, motivo);
+}
+
+bool migrarFluxos(const Instancia &inst, Solucao &sol, const std::vector<int> &fluxos, int de, int para, std::string *motivo) {
+    if (para < 0 || para >= static_cast<int>(inst.companhias.size()) || de >= static_cast<int>(inst.companhias.size())) return rejeitar(motivo, "Companhia invalida");
+    std::vector<std::pair<int, AlocacaoFluxo>> alteracoes;
+    for (int f : fluxos) {
+        if (!existeFluxo(inst, sol, f)) return rejeitar(motivo, "Fluxo invalido");
+        AlocacaoFluxo a = sol.alocacoes[f];
+        auto trocar = [&](int &rota, int outra) {
+            int m = inst.rotas[rota].companhia, nova = (m == para || (de >= 0 && m != de)) ? -1 : melhorRota(inst, f, para, outra);
+            if (nova >= 0) rota = nova;
+        };
+        trocar(a.rota1, a.rota2);
+        if (a.quantidade2 > 0) trocar(a.rota2, a.rota1);
+        if (a.rota1 != sol.alocacoes[f].rota1 || a.rota2 != sol.alocacoes[f].rota2) alteracoes.push_back({f, a});
+    }
+    if (alteracoes.empty()) return rejeitar(motivo, "Nenhum fluxo pode migrar");
+
+    return alterarAlocacoes(inst, sol, alteracoes, motivo);
+}
+
+bool trocarCompanhia(const Instancia &inst, Solucao &sol, int de, int para, std::string *motivo) {
+    if (de < 0 || de >= static_cast<int>(inst.companhias.size()) || sol.alocacoes.size() != inst.fluxos.size()) return rejeitar(motivo, "Companhia ou solucao invalida");
+
+    return migrarFluxos(inst, sol, fluxosDaCompanhia(inst, sol, de), de, para, motivo);
+}
+
+bool unificarSite(const Instancia &inst, Solucao &sol, int site, int companhia, std::string *motivo) {
+    if (site < 0 || site >= static_cast<int>(inst.sites.size())) return rejeitar(motivo, "Site invalido");
+
+    return migrarFluxos(inst, sol, fluxosDoSite(inst, site), -1, companhia, motivo);
+}
+
+bool movimentoDivisao(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol)) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int f = sorteio(static_cast<int>(inst.fluxos.size()));
+        const auto &fluxo = inst.fluxos[f];
+        const auto &a = sol.alocacoes[f];
+        if (fluxo.rotas.size() < 2 || fluxo.demanda > std::numeric_limits<int>::max()) continue;
+        int rotaB = a.rota2 >= 0 ? a.rota2 : fluxo.rotas[sorteio(static_cast<int>(fluxo.rotas.size()))];
+        if (rotaB != a.rota1 && redividirFluxo(inst, sol, f, a.rota1, rotaB, inteiroAleatorio(0, static_cast<int>(fluxo.demanda)))) return true;
+    }
+
+    return false;
+}
+
+bool movimentoSubstituicao(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol)) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int f = sorteio(static_cast<int>(inst.fluxos.size())), modo = sorteio(3); // 0: rota 1, 1: rota 2, 2: par.
+        const auto &rotas = inst.fluxos[f].rotas;
+        if (rotas.empty()) continue;
+        int n1 = modo != 1 ? rotas[sorteio(static_cast<int>(rotas.size()))] : -1, n2 = modo != 0 ? rotas[sorteio(static_cast<int>(rotas.size()))] : -1;
+        if (substituirPar(inst, sol, f, n1, n2)) return true;
+    }
+
+    return false;
+}
+
+bool movimentoCompanhia(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol)) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int f = sorteio(static_cast<int>(inst.fluxos.size())), de = inst.rotas[sol.alocacoes[f].rota1].companhia;
+        if (inst.fluxos[f].rotas.empty()) continue;
+        int para = inst.rotas[inst.fluxos[f].rotas[sorteio(static_cast<int>(inst.fluxos[f].rotas.size()))]].companhia;
+        auto lista = fluxosDaCompanhia(inst, sol, de);
+        embaralhaVetor(lista);
+        lista.resize(inteiroAleatorio(1, static_cast<int>(lista.size()))); // Subconjunto dos fluxos da companhia.
+        if (para != de && migrarFluxos(inst, sol, lista, de, para)) return true;
+    }
+
+    return false;
+}
+
+bool movimentoSite(const Instancia &inst, Solucao &sol, int tentativas) {
+    if (!prontoParaSortear(inst, sol) || inst.sites.empty()) return false;
+    for (int i = 0; i < tentativas; ++i) {
+        int site = sorteio(static_cast<int>(inst.sites.size()));
+        auto lista = fluxosDoSite(inst, site);
+        if (lista.empty()) continue;
+        const auto &rotas = inst.fluxos[lista[sorteio(static_cast<int>(lista.size()))]].rotas;
+        if (!rotas.empty() && unificarSite(inst, sol, site, inst.rotas[rotas[sorteio(static_cast<int>(rotas.size()))]].companhia)) return true;
+    }
+
+    return false;
+}
