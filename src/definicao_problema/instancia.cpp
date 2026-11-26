@@ -59,7 +59,7 @@ void validarEPreparar(Instancia &inst) {
     }
     std::vector<int> usos(d.rotas, 0);
     for (const auto &f : inst.fluxos) {
-        exigir(f.origem < d.sites && f.destino < d.sites && f.demanda > 0 && !f.rotas.empty(), "Fluxo invalido: " + std::to_string(f.id));
+        exigir(f.origem < d.sites && f.destino < d.sites && f.demanda > 0 && f.demanda <= std::numeric_limits<int>::max() && !f.rotas.empty(), "Fluxo invalido ou demanda excede int: " + std::to_string(f.id));
         exigir(f.demanda <= std::numeric_limits<Inteiro>::max() - inst.demandaTotal, "Demanda total excede int64");
         inst.demandaTotal += f.demanda;
         for (int r : f.rotas) {
