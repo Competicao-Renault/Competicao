@@ -1,4 +1,4 @@
-#include "aleatorio.h"
+#include "aleatorio.hpp"
 
 // [FRAMEWORK - pronto, não precisa mexer]
 
