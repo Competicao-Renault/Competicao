@@ -14,7 +14,7 @@ struct EstatisticasTabu {
 // Ignora caches, ordem dos pares e ordem das reutilizacoes.
 std::uint64_t hashTabu(const Solucao &solucao);
 void validarParametrosTabu(const ParametrosTabu &parametros);
-// Explora pioras e devolve a melhor incumbente viavel.
+// Explora pioras e solucoes inviaveis (penalizadas em Fa); devolve em solucao apenas a melhor incumbente viavel.
 double buscaTabu(const Instancia &inst, Solucao &solucao, const ParametrosTabu &parametros = {}, EstatisticasTabu *estatisticas = nullptr);
 // Interface preservada do cpm2.zip.
 double busca_tabu(const Instancia &inst, Solucao &solucao, int tamanhoLista, int tamanhoVizinhanca, double tempoMax);
